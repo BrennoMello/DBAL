@@ -1,39 +1,29 @@
 package experiments.active;
 
-import moa.classifiers.active.ALUncertainty;
+import moa.classifiers.active.DBAL;
 import moa.core.InstanceExample;
 import moa.core.TimingUtils;
 import moa.evaluation.ALMultiClassImbalancedPerformanceEvaluator;
-import moa.streams.ArffFileStream;
-import moa.classifiers.active.budget.FixedBM;
-import moa.classifiers.active.ALRandom;
-
-import java.util.ArrayList;
-
+import moa.streams.generators.AgrawalGenerator;
+import moa.streams.ConceptDriftStream;
 public class Debug {
 
 	public static void main(String[] args) throws Exception
 	{
-		ArffFileStream stream = new ArffFileStream("datasets/semi-synth/DJ30-D1.arff", -1);
+		//ArffFileStream stream = new ArffFileStream("datasets/semi-synth/DJ30-D1.arff", -1);
+		//AgrawalGenerator stream = new AgrawalGenerator();
+		ConceptDriftStream stream = new ConceptDriftStream();
+
+
 		stream.prepareForUse();
-		
-		//ALUncertainty activelearning = new ALUncertainty();
 
-		ALRandom activelearning = new ALRandom();
+		DBAL classifier = new DBAL();
 
-		activelearning.budgetManagerOption.setValueViaCLIString("moa.classifiers.active.budget.FixedBM -b 0.2");
-		
-		activelearning.baseLearnerOption.setValueViaCLIString("moa.classifiers.meta.imbalanced.OSAMP");
-		//activelearning.baseLearnerOption.setValueViaCLIString("moa.classifiers.meta.imbalanced" +
-		//		".KappaImbOversampling " +
-		//		"-l moa.classifiers.meta.imbalanced.OSAMP -b 0.2 -w 200 -f 1");
-		
-		//activelearning.activeLearningStrategyOption.setValueViaCLIString("RandVarUncertainty");
-		//activelearning.budgetOption.setValue(0.2);
+		classifier.prepareForUse();
 
-		activelearning.prepareForUse();
-		activelearning.resetLearning();
-		activelearning.setModelContext(stream.getHeader());
+
+
+
 
 		int numberInstances = 0;
 		
@@ -46,16 +36,16 @@ public class Debug {
 		double avg_kappa = 0;
 		int n_windows = 0;
 
-		while (stream.hasMoreInstances())
+		while (stream.hasMoreInstances() && numberInstances < 10000)
 		{
 			InstanceExample instance = stream.nextInstance();
 			
-			evaluator.addResult(instance, activelearning.getVotesForInstance(instance));
+			evaluator.addResult(instance, classifier.getVotesForInstance(instance));
 			
 			//System.out.println(instance.getData().classValue() + "\t" + Utils.maxIndex(learner.getVotesForInstance(instance)));
 			
-			activelearning.trainOnInstance(instance);
-        	evaluator.doLabelAcqReport(instance, activelearning.getLastLabelAcqReport());
+			classifier.trainOnInstance(instance);
+        	evaluator.doLabelAcqReport(instance, classifier.getLastLabelAcqReport());
 
 
 			if (numberInstances%eval_size == 0){
