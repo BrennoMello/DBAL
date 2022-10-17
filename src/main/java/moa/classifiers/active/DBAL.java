@@ -16,6 +16,9 @@ import moa.core.Measurement;
 import moa.options.ClassOption;
 import moa.classifiers.active.ALClassifier;
 import moa.classifiers.core.driftdetection.AbstractChangeDetector;
+import moa.classifiers.core.driftdetection.DDM;
+import moa.classifiers.core.driftdetection.ADWIN;
+import weka.core.Utils;
 
 public class DBAL extends AbstractClassifier implements ALClassifier{
 
@@ -25,7 +28,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             Classifier.class, "moa.classifiers.trees.HoeffdingAdaptiveTree");
 
     public FloatOption minBudgetOption = new FloatOption ("minBudget", 'm', "Minimum Budget used for supervised drift" +
-            " drift detectors", 0.1, 0,1 );
+            " drift detectors", 1, 0,1 );
     public IntOption gracePeriodOption = new IntOption ("gracePeriod", 'g', "Number of fully labeled instances" , 100
             , 0,
             Integer.MAX_VALUE );
@@ -40,6 +43,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     public boolean driftHappening;
     public int gracePeriod;
     public int labeledInstances;
+    public int instIndex;
 
 
 
@@ -56,6 +60,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         this.classifierRandom = new Random(42);
         this.gracePeriod = this.gracePeriodOption.getValue();
         this.labeledInstances = 0;
+        this.instIndex = 0;
 
 
     }
@@ -63,25 +68,47 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     @Override
     public void trainOnInstanceImpl(Instance instance) {
         double value = this.classifierRandom.nextDouble();
+        this.instIndex ++;
 
         if (this.labeledInstances < this.gracePeriod){
             this.classifier.trainOnInstance(instance);
+            this.labeledInstances++;
         } else if (value >= 1.0D - this.budget){
             double [] votes = this.classifier.getVotesForInstance(instance);
-            System.out.println(votes.length);
-            this.driftDetector.input(votes[(int) instance.classValue()]);
+            int trueClass = (int) instance.classValue();
+            int predictedClass = Utils.maxIndex(votes);
+            //System.out.println(votes.length);
+            this.driftDetector.input(trueClass == predictedClass ? 1 : 0 );
 
             this.classifier.trainOnInstance(instance);
 
         }
 
+        if (this.driftDetector.getWarningZone()){
+            System.out.println("Drift Warning Detected in position " + this.instIndex); //Here we have to adjust
+            System.out.println("Estimation " + this.driftDetector.getEstimation());
+            System.out.println("Output " + this.driftDetector.getOutput());
+            /*if (this.driftDetector.getEstimation() > 0.63){
+                this.classifier.resetLearning();
+            }*/
+
+        }
+
+
         if (this.driftDetector.getChange()){
-            System.out.println("Change Detected"); //Here we have to adjust
+            if (!this.driftHappening){
+                System.out.println("reset classifiers");
+                //this.classifier.resetLearning();
+                //this.driftDetector.resetLearning();
+            }
+            System.out.println("Drift Detected in position " + this.instIndex); //Here we have to adjust
             this.budget = this.budget * 1.02;
             this.driftHappening = true;
 
+
         }else{
             if (this.driftHappening){
+                System.out.println("Drift gone in position " + this.instIndex); //Here we have to adjust
                 this.budget = this.minBudgetOption.getValue();
                 this.driftHappening = false;
             }

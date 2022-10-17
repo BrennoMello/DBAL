@@ -5,6 +5,7 @@ import moa.core.InstanceExample;
 import moa.core.TimingUtils;
 import moa.evaluation.ALMultiClassImbalancedPerformanceEvaluator;
 import moa.streams.generators.AgrawalGenerator;
+import moa.streams.generators.RandomRBFGenerator;
 import moa.streams.ConceptDriftStream;
 public class Debug {
 
@@ -14,10 +15,20 @@ public class Debug {
 		//AgrawalGenerator stream = new AgrawalGenerator();
 		ConceptDriftStream stream = new ConceptDriftStream();
 
+		stream.streamOption.setValueViaCLIString("moa.streams.generators.AgrawalGenerator -f 2");
+		stream.driftstreamOption.setValueViaCLIString("moa.streams.generators.AgrawalGenerator -f 4");
+
+
+		stream.positionOption.setValue(5000);
+		stream.widthOption.setValue(1);
+
+
 
 		stream.prepareForUse();
 
 		DBAL classifier = new DBAL();
+
+		classifier.driftDetectorOption.setValueViaCLIString("moa.classifiers.core.driftdetection.ADWINChangeDetector");
 
 		classifier.prepareForUse();
 
@@ -38,7 +49,11 @@ public class Debug {
 
 		while (stream.hasMoreInstances() && numberInstances < 10000)
 		{
-			InstanceExample instance = stream.nextInstance();
+
+			/*if (numberInstances == 5000){
+				classifier.resetLearning();
+			}*/
+			InstanceExample instance = (InstanceExample) stream.nextInstance();
 			
 			evaluator.addResult(instance, classifier.getVotesForInstance(instance));
 			
