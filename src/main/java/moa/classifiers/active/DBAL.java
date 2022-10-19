@@ -12,20 +12,25 @@ import moa.classifiers.AbstractClassifier;
 import moa.classifiers.Classifier;
 import moa.classifiers.active.budget.BudgetManager;
 import moa.classifiers.core.driftdetection.ChangeDetector;
+import moa.core.Example;
+import moa.core.InstanceExample;
 import moa.core.Measurement;
+import moa.evaluation.ALMultiClassImbalancedPerformanceEvaluator;
+import moa.evaluation.ImbalancedPerformanceEvaluator;
+import moa.evaluation.MultiClassImbalancedPerformanceEvaluator;
 import moa.options.ClassOption;
 import moa.classifiers.active.ALClassifier;
 import moa.classifiers.core.driftdetection.AbstractChangeDetector;
 import moa.classifiers.core.driftdetection.DDM;
 import moa.classifiers.core.driftdetection.ADWIN;
 import weka.core.Utils;
-
+//import moa.classifiers.trees.HoeffdingTree
 public class DBAL extends AbstractClassifier implements ALClassifier{
 
     private static final long serialVersionUID = 1L;
 
     public ClassOption baseLearnerOption = new ClassOption("baseLearner", 'l', "Classifier to train.",
-            Classifier.class, "moa.classifiers.trees.HoeffdingAdaptiveTree");
+            Classifier.class, "moa.classifiers.trees.HoeffdingTree");
 
     public FloatOption minBudgetOption = new FloatOption ("minBudget", 'm', "Minimum Budget used for supervised drift" +
             " drift detectors", 1, 0,1 );
@@ -45,6 +50,10 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     public int labeledInstances;
     public int instIndex;
 
+    public int correctInstances;
+
+    public MultiClassImbalancedPerformanceEvaluator evaluator;
+
 
 
 
@@ -61,6 +70,9 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         this.gracePeriod = this.gracePeriodOption.getValue();
         this.labeledInstances = 0;
         this.instIndex = 0;
+        this.correctInstances = 0;
+        this.evaluator = new MultiClassImbalancedPerformanceEvaluator();
+        evaluator.widthOption.setValue(500);
 
 
     }
@@ -77,17 +89,31 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             double [] votes = this.classifier.getVotesForInstance(instance);
             int trueClass = (int) instance.classValue();
             int predictedClass = Utils.maxIndex(votes);
+            evaluator.addResult(instance, votes);
+
             //System.out.println(votes.length);
-            this.driftDetector.input(trueClass == predictedClass ? 1 : 0 );
+
+            this.correctInstances = this.correctInstances  + (trueClass == predictedClass ? 1 : 0);
+            int total_instances = this.labeledInstances - this.gracePeriod + 1;
+
+            double accuracy = evaluator.getAucEstimator().getAccuracy();
+            /*if (instIndex % 500 == 0) {
+                //System.out.println("Index "+ this.instIndex);
+                //System.out.println("Accuracy " + accuracy);
+            }*/
+            //System.out.println("Correct Instances "+ this.correctInstances);
+            //System.out.println("Total Instances "+ total_instances);
+            this.driftDetector.input(accuracy);
 
             this.classifier.trainOnInstance(instance);
+            this.labeledInstances++;
 
         }
 
         if (this.driftDetector.getWarningZone()){
             System.out.println("Drift Warning Detected in position " + this.instIndex); //Here we have to adjust
             System.out.println("Estimation " + this.driftDetector.getEstimation());
-            System.out.println("Output " + this.driftDetector.getOutput());
+            //System.out.println("Output " + this.driftDetector.getOutput());
             /*if (this.driftDetector.getEstimation() > 0.63){
                 this.classifier.resetLearning();
             }*/
