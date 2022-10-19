@@ -7,7 +7,7 @@ import moa.evaluation.ALMultiClassImbalancedPerformanceEvaluator;
 import moa.streams.generators.AgrawalGenerator;
 import moa.streams.generators.RandomRBFGenerator;
 import moa.streams.ConceptDriftStream;
-
+//import moa.classifiers.meta.AdaptiveRandomForest
 public class Debug {
 
 	public static void main(String[] args) throws Exception
@@ -16,8 +16,8 @@ public class Debug {
 		//AgrawalGenerator stream = new AgrawalGenerator();
 		ConceptDriftStream stream = new ConceptDriftStream();
 
-		stream.streamOption.setValueViaCLIString("moa.streams.generators.RandomRBFGenerator -n 2 -i 2 ");
-		stream.driftstreamOption.setValueViaCLIString("moa.streams.generators.RandomRBFGenerator -n 25 -i 5");
+		stream.streamOption.setValueViaCLIString("moa.streams.generators.AgrawalGenerator -f 1 -b ");
+		stream.driftstreamOption.setValueViaCLIString("moa.streams.generators.AgrawalGenerator -f 2 -b");
 
 
 		stream.positionOption.setValue(5000);
@@ -29,6 +29,7 @@ public class Debug {
 
 		DBAL classifier = new DBAL();
 		//import moa.classifiers.core.driftdetection.STEPD
+		//import moa.classifiers.core.driftdetection.ADWINChangeDetector
 		classifier.driftDetectorOption.setValueViaCLIString("moa.classifiers.core.driftdetection.ADWINChangeDetector " +
 				"-a 0.0001");
 

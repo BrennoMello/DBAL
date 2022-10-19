@@ -33,7 +33,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             Classifier.class, "moa.classifiers.trees.HoeffdingTree");
 
     public FloatOption minBudgetOption = new FloatOption ("minBudget", 'm', "Minimum Budget used for supervised drift" +
-            " drift detectors", 1, 0,1 );
+            " drift detectors", 0.05, 0,1 );
     public IntOption gracePeriodOption = new IntOption ("gracePeriod", 'g', "Number of fully labeled instances" , 100
             , 0,
             Integer.MAX_VALUE );
@@ -72,7 +72,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         this.instIndex = 0;
         this.correctInstances = 0;
         this.evaluator = new MultiClassImbalancedPerformanceEvaluator();
-        evaluator.widthOption.setValue(500);
+        evaluator.widthOption.setValue(300);
 
 
     }
@@ -87,23 +87,17 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             this.labeledInstances++;
         } else if (value >= 1.0D - this.budget){
             double [] votes = this.classifier.getVotesForInstance(instance);
-            int trueClass = (int) instance.classValue();
-            int predictedClass = Utils.maxIndex(votes);
+
             evaluator.addResult(instance, votes);
 
-            //System.out.println(votes.length);
-
-            this.correctInstances = this.correctInstances  + (trueClass == predictedClass ? 1 : 0);
-            int total_instances = this.labeledInstances - this.gracePeriod + 1;
-
             double accuracy = evaluator.getAucEstimator().getAccuracy();
-            /*if (instIndex % 500 == 0) {
-                //System.out.println("Index "+ this.instIndex);
-                //System.out.println("Accuracy " + accuracy);
-            }*/
+            if (instIndex > 4800 && instIndex % 100 == 0) {
+                System.out.println("Index "+ this.instIndex);
+                System.out.println("Accuracy " + accuracy);
+            }
             //System.out.println("Correct Instances "+ this.correctInstances);
             //System.out.println("Total Instances "+ total_instances);
-            this.driftDetector.input(accuracy);
+            this.driftDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
 
             this.classifier.trainOnInstance(instance);
             this.labeledInstances++;
@@ -111,7 +105,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         }
 
         if (this.driftDetector.getWarningZone()){
-            System.out.println("Drift Warning Detected in position " + this.instIndex); //Here we have to adjust
+           // System.out.println("Drift Warning Detected in position " + this.instIndex); //Here we have to adjust
             System.out.println("Estimation " + this.driftDetector.getEstimation());
             //System.out.println("Output " + this.driftDetector.getOutput());
             /*if (this.driftDetector.getEstimation() > 0.63){
@@ -125,9 +119,10 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             if (!this.driftHappening){
                 System.out.println("reset classifiers");
                 //this.classifier.resetLearning();
-                //this.driftDetector.resetLearning();
+                this.driftDetector = ((ChangeDetector) this.getPreparedClassOption(this.driftDetectorOption)).copy();
+                System.out.println("Drift Detected in position " + this.instIndex); //Here we have to adjust
             }
-            System.out.println("Drift Detected in position " + this.instIndex); //Here we have to adjust
+
             this.budget = this.budget * 1.02;
             this.driftHappening = true;
 
