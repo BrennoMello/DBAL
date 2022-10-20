@@ -25,6 +25,8 @@ import moa.classifiers.core.driftdetection.DDM;
 import moa.classifiers.core.driftdetection.ADWIN;
 import weka.core.Utils;
 //import moa.classifiers.trees.HoeffdingTree
+import utils.Uncertainty;
+import moa.classifiers.active.ALUncertainty;
 public class DBAL extends AbstractClassifier implements ALClassifier{
 
     private static final long serialVersionUID = 1L;
@@ -38,12 +40,17 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             , 0,
             Integer.MAX_VALUE );
 
-    public ClassOption driftDetectorOption = new ClassOption("driftDetector", 'd', "Drift Detector for increasing " +
+    public ClassOption driftDetectorOption = new ClassOption("warningDetector", 'w', "Warning Detector for increasing" +
+            " " +
+            "budget", AbstractChangeDetector.class, "moa.classifiers.core.driftdetection.DDM");
+
+    public ClassOption warningDetectorOption = new ClassOption("driftDetector", 'd', "Drift Detector for increasing " +
             "budget", AbstractChangeDetector.class, "moa.classifiers.core.driftdetection.DDM");
 
 
     public Classifier classifier;
     public ChangeDetector driftDetector;
+    public ChangeDetector warningDetector;
     public double budget;
     public boolean driftHappening;
     public int gracePeriod;
@@ -64,6 +71,8 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         this.classifier.resetLearning();
         this.driftDetector = ((ChangeDetector) this.getPreparedClassOption(this.driftDetectorOption)).copy();
         this.driftDetector.resetLearning();
+        this.warningDetector = ((ChangeDetector) this.getPreparedClassOption(this.warningDetectorOption)).copy();
+        this.warningDetector.resetLearning();
         this.budget = this.minBudgetOption.getValue();
         this.driftHappening = false;
         this.classifierRandom = new Random(42);
@@ -98,15 +107,18 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             //System.out.println("Correct Instances "+ this.correctInstances);
             //System.out.println("Total Instances "+ total_instances);
             this.driftDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
+            this.warningDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
+
 
             this.classifier.trainOnInstance(instance);
             this.labeledInstances++;
 
         }
 
-        if (this.driftDetector.getWarningZone()){
-           // System.out.println("Drift Warning Detected in position " + this.instIndex); //Here we have to adjust
-            System.out.println("Estimation " + this.driftDetector.getEstimation());
+        if (this.warningDetector.getChange()){
+            System.out.println("Drift Warning Detected in position " + this.instIndex); //Here we have to adjust
+            this.warningDetector = ((ChangeDetector) this.getPreparedClassOption(this.warningDetectorOption)).copy();
+            //System.out.println("Estimation " + this.driftDetector.getEstimation());
             //System.out.println("Output " + this.driftDetector.getOutput());
             /*if (this.driftDetector.getEstimation() > 0.63){
                 this.classifier.resetLearning();

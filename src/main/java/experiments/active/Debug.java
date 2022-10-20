@@ -20,8 +20,8 @@ public class Debug {
 		stream.driftstreamOption.setValueViaCLIString("moa.streams.generators.AgrawalGenerator -f 2 -b");
 
 
-		stream.positionOption.setValue(5000);
-		stream.widthOption.setValue(1);
+		stream.positionOption.setValue(50000);
+		stream.widthOption.setValue(1000);
 
 
 
@@ -30,6 +30,8 @@ public class Debug {
 		DBAL classifier = new DBAL();
 		//import moa.classifiers.core.driftdetection.STEPD
 		//import moa.classifiers.core.driftdetection.ADWINChangeDetector
+		classifier.warningDetectorOption.setValueViaCLIString("moa.classifiers.core.driftdetection.ADWINChangeDetector " +
+				"-a 0.01");
 		classifier.driftDetectorOption.setValueViaCLIString("moa.classifiers.core.driftdetection.ADWINChangeDetector " +
 				"-a 0.0001");
 
@@ -50,7 +52,7 @@ public class Debug {
 		double avg_kappa = 0;
 		int n_windows = 0;
 
-		while (stream.hasMoreInstances() && numberInstances < 10000)
+		while (stream.hasMoreInstances() && numberInstances < 100000)
 		{
 
 			/*if (numberInstances == 5000){
