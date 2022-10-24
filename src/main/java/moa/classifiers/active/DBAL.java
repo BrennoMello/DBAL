@@ -51,12 +51,13 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     public Classifier classifier;
     public ChangeDetector driftDetector;
     public ChangeDetector warningDetector;
+    public Uncertainty al_decider;
     public double budget;
     public boolean driftHappening;
     public int gracePeriod;
     public int labeledInstances;
     public int instIndex;
-
+    public int spendedBudget;
     public int correctInstances;
 
     public MultiClassImbalancedPerformanceEvaluator evaluator;
@@ -80,8 +81,10 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         this.labeledInstances = 0;
         this.instIndex = 0;
         this.correctInstances = 0;
+        this.spendedBudget = 0;
         this.evaluator = new MultiClassImbalancedPerformanceEvaluator();
         evaluator.widthOption.setValue(300);
+        this.al_decider = new Uncertainty(0);
 
 
     }
@@ -91,28 +94,40 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         double value = this.classifierRandom.nextDouble();
         this.instIndex ++;
 
+
+
+
         if (this.labeledInstances < this.gracePeriod){
             this.classifier.trainOnInstance(instance);
             this.labeledInstances++;
         } else if (value >= 1.0D - this.budget){
-            double [] votes = this.classifier.getVotesForInstance(instance);
+            if (this.spendedBudget/this.instIndex <= this.budget) {
+                double[] votes = this.classifier.getVotesForInstance(instance);
+                this.spendedBudget++;
 
-            evaluator.addResult(instance, votes);
+
+            /*evaluator.addResult(instance, votes);
 
             double accuracy = evaluator.getAucEstimator().getAccuracy();
             if (instIndex > 4800 && instIndex % 100 == 0) {
                 System.out.println("Index "+ this.instIndex);
                 System.out.println("Accuracy " + accuracy);
+            }*/
+                //System.out.println("Correct Instances "+ this.correctInstances);
+                //System.out.println("Total Instances "+ total_instances);
+                this.driftDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
+                this.warningDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
+
+
+                this.classifier.trainOnInstance(instance);
+                this.labeledInstances++;
             }
-            //System.out.println("Correct Instances "+ this.correctInstances);
-            //System.out.println("Total Instances "+ total_instances);
-            this.driftDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
-            this.warningDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
 
-
-            this.classifier.trainOnInstance(instance);
-            this.labeledInstances++;
-
+        }else if (al_decider.toLearn(this.classifier.getVotesForInstance(instance))){
+            if (this.spendedBudget/this.instIndex <= this.budget) {
+                this.classifier.trainOnInstance(instance);
+                this.spendedBudget++;
+            }
         }
 
         if (this.warningDetector.getChange()){
