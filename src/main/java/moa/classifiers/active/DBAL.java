@@ -84,7 +84,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         this.spendedBudget = 0;
         this.evaluator = new MultiClassImbalancedPerformanceEvaluator();
         evaluator.widthOption.setValue(300);
-        this.al_decider = new Uncertainty(0);
+        this.al_decider = new Uncertainty(1);
 
 
     }
@@ -97,24 +97,17 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
 
 
+
         if (this.labeledInstances < this.gracePeriod){
             this.classifier.trainOnInstance(instance);
             this.labeledInstances++;
         } else if (value >= 1.0D - this.budget){
-            if (this.spendedBudget/this.instIndex <= this.budget) {
+            if ((float) this.spendedBudget/this.instIndex <= this.budget) {
                 double[] votes = this.classifier.getVotesForInstance(instance);
                 this.spendedBudget++;
 
 
-            /*evaluator.addResult(instance, votes);
 
-            double accuracy = evaluator.getAucEstimator().getAccuracy();
-            if (instIndex > 4800 && instIndex % 100 == 0) {
-                System.out.println("Index "+ this.instIndex);
-                System.out.println("Accuracy " + accuracy);
-            }*/
-                //System.out.println("Correct Instances "+ this.correctInstances);
-                //System.out.println("Total Instances "+ total_instances);
                 this.driftDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
                 this.warningDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
 
@@ -124,7 +117,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             }
 
         }else if (al_decider.toLearn(this.classifier.getVotesForInstance(instance))){
-            if (this.spendedBudget/this.instIndex <= this.budget) {
+            if ((float) this.spendedBudget/this.instIndex <= this.budget) {
                 this.classifier.trainOnInstance(instance);
                 this.spendedBudget++;
             }
@@ -141,6 +134,12 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
         }
 
+        if (this.warningDetector.getChange()){
+            if (!this.driftHappening){
+                this.budget = this.budget * 1.05;
+            }
+        }
+
 
         if (this.driftDetector.getChange()){
             if (!this.driftHappening){
@@ -150,7 +149,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
                 System.out.println("Drift Detected in position " + this.instIndex); //Here we have to adjust
             }
 
-            this.budget = this.budget * 1.02;
+            this.budget = this.budget * 1.10;
             this.driftHappening = true;
 
 
@@ -181,7 +180,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
     @Override
     public int getLastLabelAcqReport() {
-        return 0;
+        return this.spendedBudget;
     }
 
     @Override

@@ -32,7 +32,10 @@ public class Uncertainty {
         this.stepOption = 0.01D;
         this.classifierRandom = new Random(42);
         this.activeLearningChoiche = activeLearningOption;
-        this.budget = 0.1;
+        this.budget = 0.05;
+    }
+    public void setNewBudget(double value){
+        this.budget = value;
     }
     private double getMaxPosterior(double[] incomingPrediction) {
         if (incomingPrediction.length > 1) {
