@@ -20,13 +20,13 @@ public class Debug {
 
 		stream.streamOption.setValueViaCLIString("moa.streams.generators.AgrawalGenerator -f 1 -b ");
 
-		String driftStreamCLI = "ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -f 2) -d " +
+		/*String driftStreamCLI = "ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -f 2) -d " +
 				"(ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -f 3) -d (moa.streams.generators" +
-				".AgrawalGenerator -f 4) -p 25000 -w 1) -p 25000 -w 1";  // 3 drifts
+				".AgrawalGenerator -f 4) -p 25000 -w 1) -p 25000 -w 1";  */// 3 drifts
 
-		/*String driftStreamCLI = "ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -f 2) -d (moa" +
+		String driftStreamCLI = "ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -f 2) -d (moa" +
 			".streams" +
-				".generators.AgrawalGenerator -f 3) -p 30000 -w 1" ;*/  // 2 drifts
+				".generators.AgrawalGenerator -f 3) -p 30000 -w 1" ;  // 2 drifts
 
 		//String driftStreamCLI = "moa.streams.generators.AgrawalGenerator -f 2 -b "; // 1 drift
 
@@ -36,7 +36,7 @@ public class Debug {
 
 
 
-		stream.positionOption.setValue(25000);
+		stream.positionOption.setValue(30000);
 		stream.widthOption.setValue(1);
 
 

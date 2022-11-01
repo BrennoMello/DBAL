@@ -4,6 +4,8 @@ import com.github.javacliparser.FloatOption;
 import com.github.javacliparser.IntOption;
 import com.yahoo.labs.samoa.instances.Instance;
 import com.yahoo.labs.samoa.instances.InstancesHeader;
+
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -49,18 +51,29 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
 
     public Classifier classifier;
+    public Classifier backgroundClassifier;
     public ChangeDetector driftDetector;
     public ChangeDetector warningDetector;
     public Uncertainty al_decider;
     public double budget;
     public boolean driftHappening;
+    public boolean warningHappening;
     public int gracePeriod;
     public int labeledInstances;
     public int instIndex;
     public int spendedBudget;
     public int correctInstances;
 
+    public int warningInstances;
+    public int warningWindow;
+
+    public int driftInstances;
+    public int driftWindow;
+
     public MultiClassImbalancedPerformanceEvaluator evaluator;
+
+    public double [][] probability_correct;
+    public double [][] probability_incorrect;
 
 
 
@@ -70,11 +83,14 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     public void resetLearningImpl() {
         this.classifier = ((Classifier) this.getPreparedClassOption(this.baseLearnerOption)).copy();
         this.classifier.resetLearning();
+        this.backgroundClassifier = ((Classifier) this.getPreparedClassOption(this.baseLearnerOption)).copy();
+        this.backgroundClassifier.resetLearning();
         this.driftDetector = ((ChangeDetector) this.getPreparedClassOption(this.driftDetectorOption)).copy();
         this.driftDetector.resetLearning();
         this.warningDetector = ((ChangeDetector) this.getPreparedClassOption(this.warningDetectorOption)).copy();
         this.warningDetector.resetLearning();
         this.budget = this.minBudgetOption.getValue();
+        this.warningHappening = false;
         this.driftHappening = false;
         this.classifierRandom = new Random(42);
         this.gracePeriod = this.gracePeriodOption.getValue();
@@ -86,7 +102,23 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         evaluator.widthOption.setValue(300);
         this.al_decider = new Uncertainty(1);
 
+        this.warningWindow = 50;
+        this.driftWindow = 100;
 
+        this.probability_correct = new double[2][2];
+        this.probability_incorrect = new double[2][2];
+
+
+    }
+
+    private void printVotes (Instance inst, double[] votes){
+        System.out.println("Class "+ inst.classValue());
+        double sum = Arrays.stream(votes).sum();
+
+        for (int i=0; i< votes.length; i++){
+            System.out.print("["+votes[i]/sum+"] ");
+        }
+        System.out.println("");
     }
 
     @Override
@@ -101,65 +133,95 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         if (this.labeledInstances < this.gracePeriod){
             this.classifier.trainOnInstance(instance);
             this.labeledInstances++;
-        } else if (value >= 1.0D - this.budget){
-            if ((float) this.spendedBudget/this.instIndex <= this.budget) {
-                double[] votes = this.classifier.getVotesForInstance(instance);
-                this.spendedBudget++;
+        } else if (al_decider.toLearn(this.classifier.getVotesForInstance(instance))) {
+            this.driftDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
+            this.warningDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
+            this.classifier.trainOnInstance(instance);
+            this.backgroundClassifier.trainOnInstance(instance);
+            this.labeledInstances++;
 
+            if (this.warningHappening){
+                if (this.warningInstances < this.warningWindow) {
+                    this.budget = this.budget * 1.20;
+                    this.warningInstances++;
+                }else{
+                    this.warningInstances = 0;
+                    this.budget = this.minBudgetOption.getValue();
+                    this.warningHappening = false;
+                }
 
-
-                this.driftDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
-                this.warningDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
-
-
-                this.classifier.trainOnInstance(instance);
-                this.labeledInstances++;
+                this.al_decider.setNewBudget(this.budget);
             }
 
-        }else if (al_decider.toLearn(this.classifier.getVotesForInstance(instance))){
-            if ((float) this.spendedBudget/this.instIndex <= this.budget) {
-                this.classifier.trainOnInstance(instance);
-                this.spendedBudget++;
+            if (this.driftHappening){
+                if (this.warningHappening){
+                    this.warningHappening = false;
+                    this.warningInstances = 0;
+                }
+                if (this.driftInstances < this.driftWindow) {
+                    this.budget = this.budget * 1.30;
+                    this.driftInstances++;
+                }else{
+                    this.driftInstances = 0;
+                    this.driftHappening = false;
+                    this.budget = this.minBudgetOption.getValue();
+
+                }
+                this.al_decider.setNewBudget(this.budget);
             }
+
+
+
         }
+
 
         if (this.warningDetector.getChange()){
             System.out.println("Drift Warning Detected in position " + this.instIndex); //Here we have to adjust
             this.warningDetector = ((ChangeDetector) this.getPreparedClassOption(this.warningDetectorOption)).copy();
-            //System.out.println("Estimation " + this.driftDetector.getEstimation());
-            //System.out.println("Output " + this.driftDetector.getOutput());
-            /*if (this.driftDetector.getEstimation() > 0.63){
-                this.classifier.resetLearning();
-            }*/
+            this.backgroundClassifier = ((Classifier) this.getPreparedClassOption(this.baseLearnerOption)).copy();
+            this.warningHappening = true;
+            this.warningInstances = 0;
 
         }
 
-        if (this.warningDetector.getChange()){
-            if (!this.driftHappening){
-                this.budget = this.budget * 1.05;
-            }
-        }
+
 
 
         if (this.driftDetector.getChange()){
-            if (!this.driftHappening){
-                System.out.println("reset classifiers");
-                //this.classifier.resetLearning();
-                this.driftDetector = ((ChangeDetector) this.getPreparedClassOption(this.driftDetectorOption)).copy();
-                System.out.println("Drift Detected in position " + this.instIndex); //Here we have to adjust
-            }
 
-            this.budget = this.budget * 1.10;
+            System.out.println("reset classifiers");
+            this.driftDetector = ((ChangeDetector) this.getPreparedClassOption(this.driftDetectorOption)).copy();
+            //this.classifier = this.backgroundClassifier.copy();
+            System.out.println("Drift Detected in position " + this.instIndex); //Here we have to adjust
+
             this.driftHappening = true;
-
-
-        }else{
-            if (this.driftHappening){
-                System.out.println("Drift gone in position " + this.instIndex); //Here we have to adjust
-                this.budget = this.minBudgetOption.getValue();
-                this.driftHappening = false;
-            }
+            this.driftInstances = 0;
         }
+
+        if (warningHappening){
+            if ((int) instance.classValue() == Utils.maxIndex(this.classifier.getVotesForInstance(instance))){
+                this.probability_correct[(int) instance.classValue()][0] +=
+                        this.classifier.getVotesForInstance(instance)[0];
+                this.probability_correct[(int) instance.classValue()][1] +=
+                        this.classifier.getVotesForInstance(instance)[1];
+                //System.out.println("Instance after warning " + this.warningInstances);
+                //this.printVotes(instance, this.classifier.getVotesForInstance(instance));
+            }
+
+            if ((int) instance.classValue() != Utils.maxIndex(this.classifier.getVotesForInstance(instance))){
+                this.probability_correct[(int) instance.classValue()][0] +=
+                        this.classifier.getVotesForInstance(instance)[0];
+                this.probability_correct[(int) instance.classValue()][1] +=
+                        this.classifier.getVotesForInstance(instance)[1];
+                //System.out.println("Instance after warning " + this.warningInstances);
+                //this.printVotes(instance, this.classifier.getVotesForInstance(instance));
+            }
+
+        }
+
+
+
+
 
     }
 
@@ -180,7 +242,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
     @Override
     public int getLastLabelAcqReport() {
-        return this.spendedBudget;
+        return this.labeledInstances - this.gracePeriod;
     }
 
     @Override
