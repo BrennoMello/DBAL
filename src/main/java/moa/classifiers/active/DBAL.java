@@ -5,10 +5,7 @@ import com.github.javacliparser.IntOption;
 import com.yahoo.labs.samoa.instances.Instance;
 import com.yahoo.labs.samoa.instances.InstancesHeader;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import moa.classifiers.AbstractClassifier;
 import moa.classifiers.Classifier;
@@ -29,6 +26,7 @@ import weka.core.Utils;
 //import moa.classifiers.trees.HoeffdingTree
 import utils.Uncertainty;
 import moa.classifiers.active.ALUncertainty;
+
 public class DBAL extends AbstractClassifier implements ALClassifier{
 
     private static final long serialVersionUID = 1L;
@@ -75,6 +73,11 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     public double [][] probability_correct;
     public double [][] probability_incorrect;
 
+    public int [] correct_classified_counter;
+    public int [] incorrect_classified_counter;
+
+    public int [] beforeDrift = new int[2];
+
 
 
 
@@ -106,7 +109,16 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         this.driftWindow = 100;
 
         this.probability_correct = new double[2][2];
+        for (double[] row: probability_correct)
+            Arrays.fill(row, 0.0);
         this.probability_incorrect = new double[2][2];
+        for (double[] row: probability_incorrect)
+            Arrays.fill(row, 0.0);
+
+        this.correct_classified_counter = new int[2];
+        Arrays.fill(this.correct_classified_counter, 0);
+        this.incorrect_classified_counter = new int[2];
+        Arrays.fill(this.incorrect_classified_counter, 0);
 
 
     }
@@ -142,12 +154,20 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
             if (this.warningHappening){
                 if (this.warningInstances < this.warningWindow) {
-                    this.budget = this.budget * 1.20;
+                    this.budget = Math.min(this.budget * 1.2, 0.1);
+                    //System.out.println("Budget under drift warning "+ this.budget);
                     this.warningInstances++;
                 }else{
                     this.warningInstances = 0;
                     this.budget = this.minBudgetOption.getValue();
                     this.warningHappening = false;
+
+                    double [][] proportional =  this.getProportionsCorrect();
+                    System.out.println("instance number");
+                    System.out.println(this.correct_classified_counter[0]);
+                    System.out.println(this.correct_classified_counter[1]);
+                    System.out.println(Arrays.toString(proportional[0]));
+                    System.out.println(Arrays.toString(proportional[1]));
                 }
 
                 this.al_decider.setNewBudget(this.budget);
@@ -159,12 +179,24 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
                     this.warningInstances = 0;
                 }
                 if (this.driftInstances < this.driftWindow) {
-                    this.budget = this.budget * 1.30;
+                    //System.out.println("Budget under drift "+ this.budget);
+                    this.budget = Math.min(this.budget * 1.3, 0.1);
                     this.driftInstances++;
                 }else{
                     this.driftInstances = 0;
                     this.driftHappening = false;
                     this.budget = this.minBudgetOption.getValue();
+                    double [][] proportional =  this.getProportionsIncorrect();
+
+                    //this.al_decider.costLabeling = 0;
+                    //this.al_decider.lastLabelAcq = 0;
+
+                    System.out.println("instance number");
+
+                    System.out.println(Arrays.toString(proportional[0]));
+                    System.out.println(Arrays.toString(proportional[1]));
+                    //this.al_decider.lastLabelAcq = this.beforeDrift[0];
+                    //this.al_decider.costLabeling = this.beforeDrift[1];
 
                 }
                 this.al_decider.setNewBudget(this.budget);
@@ -194,25 +226,38 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             //this.classifier = this.backgroundClassifier.copy();
             System.out.println("Drift Detected in position " + this.instIndex); //Here we have to adjust
 
+            //this.beforeDrift[0] = this.al_decider.lastLabelAcq;
+            //this.beforeDrift[1] = this.al_decider.costLabeling;
+            this.al_decider.lastLabelAcq = 0;
+            this.al_decider.costLabeling = 0;
+
             this.driftHappening = true;
             this.driftInstances = 0;
         }
 
         if (warningHappening){
             if ((int) instance.classValue() == Utils.maxIndex(this.classifier.getVotesForInstance(instance))){
+                //System.out.println(Arrays.toString(this.probability_correct[0]));
+                //System.out.println(Arrays.toString(this.probability_correct[1]));
                 this.probability_correct[(int) instance.classValue()][0] +=
-                        this.classifier.getVotesForInstance(instance)[0];
+                        this.classifier.getVotesForInstance(instance)[0] / Arrays.stream(this.classifier.getVotesForInstance(instance)).sum();
                 this.probability_correct[(int) instance.classValue()][1] +=
-                        this.classifier.getVotesForInstance(instance)[1];
+                        this.classifier.getVotesForInstance(instance)[1] / Arrays.stream(this.classifier.getVotesForInstance(instance)).sum();
+
+                this.correct_classified_counter[(int) instance.classValue()] +=1;
+
+
                 //System.out.println("Instance after warning " + this.warningInstances);
                 //this.printVotes(instance, this.classifier.getVotesForInstance(instance));
             }
 
             if ((int) instance.classValue() != Utils.maxIndex(this.classifier.getVotesForInstance(instance))){
-                this.probability_correct[(int) instance.classValue()][0] +=
-                        this.classifier.getVotesForInstance(instance)[0];
-                this.probability_correct[(int) instance.classValue()][1] +=
-                        this.classifier.getVotesForInstance(instance)[1];
+                this.probability_incorrect[(int) instance.classValue()][0] +=
+                        this.classifier.getVotesForInstance(instance)[0] / Arrays.stream(this.classifier.getVotesForInstance(instance)).sum();;
+                this.probability_incorrect[(int) instance.classValue()][1] +=
+                        this.classifier.getVotesForInstance(instance)[1] / Arrays.stream(this.classifier.getVotesForInstance(instance)).sum();;
+
+                this.incorrect_classified_counter[(int) instance.classValue()] +=1;
                 //System.out.println("Instance after warning " + this.warningInstances);
                 //this.printVotes(instance, this.classifier.getVotesForInstance(instance));
             }
@@ -248,5 +293,25 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     @Override
     public boolean isRandomizable() {
         return false;
+    }
+
+    public double [][] getProportionsCorrect(){
+        double [][] proportions = new double[2][2];
+        proportions[0][0] = this.probability_correct[0][0] / this.correct_classified_counter[0];
+        proportions[0][1] = this.probability_correct[0][1] / this.correct_classified_counter[0];
+        proportions[1][0] = this.probability_correct[1][0] / this.correct_classified_counter[1];
+        proportions[1][1] = this.probability_correct[1][1] / this.correct_classified_counter[1];
+
+        return proportions;
+    }
+
+    public double [][] getProportionsIncorrect(){
+        double [][] proportions = new double[2][2];
+        proportions[0][0] = this.probability_incorrect[0][0] / this.incorrect_classified_counter[0];
+        proportions[0][1] = this.probability_incorrect[0][1] / this.incorrect_classified_counter[0];
+        proportions[1][0] = this.probability_incorrect[1][0] / this.incorrect_classified_counter[1];
+        proportions[1][1] = this.probability_incorrect[1][1] / this.incorrect_classified_counter[1];
+
+        return proportions;
     }
 }
