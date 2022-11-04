@@ -58,9 +58,13 @@ public class Debug {
 
 		stream.prepareForUse();
 
+
+
 		//ALUncertainty classifier = new ALUncertainty();
 		//classifier.activeLearningStrategyOption.setChosenIndex(1);
 
+
+		//moa.classifiers.active.ALRandom -l classifier -b (moa.classifiers.active.budget.FixedBM -b budget)
 		/*ALRandom classifier = new ALRandom();
 
 		classifier.budgetManagerOption.setValueViaCLIString("moa.classifiers.active.budget.FixedBM -b 1");
