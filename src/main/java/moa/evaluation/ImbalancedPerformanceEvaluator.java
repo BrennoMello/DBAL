@@ -494,6 +494,7 @@ public class ImbalancedPerformanceEvaluator extends
 		measurement[7] = new Measurement("G-Mean", this.aucEstimator.getGMean());
 		measurement[8] = new Measurement("Recall", this.aucEstimator.getRecall());
 		measurement[9] = new Measurement("KappaM", this.aucEstimator.getKappaM());
+
 		measurement[10] = new Measurement("Classes", numClasses);
 		
 		for(int i = 0; i < numClasses; i++) {

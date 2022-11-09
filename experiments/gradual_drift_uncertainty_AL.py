@@ -4,58 +4,145 @@ import time
 import datetime
 import os
 
-semi_synth_datasets = [
-    "CRIMES-D1",
-    "DJ30-D1",
-    "GAS-D1",
-    "OLYMPIC-D1",
-    "POKER-D1",
-    "SENSOR-D1",
-    "TAGS-D1",
-    "ACTIVITY_RAW-D1",
-    "ACTIVITY-D1",
-    "CONNECT4-D1",
-    "COVERTYPE-D1",
+generators = [
+    "ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -i 1 -f 1 -b) -r 1" 
+    + " -d (moa.streams.generators.AgrawalGenerator -i 1 -f 2 -b) -w 25000 -p 50000", 
+    
+    
+    "ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -i 1 -f 1 -b) -r 1 " 
+    + " -d (ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -i 1 -f 2 -b) -r 2 "
+    + " -d  (moa.streams.generators.AgrawalGenerator -i 1 -f 3 -b) -w 15000 -p 30000) -w 15000 -p 30000",
+
+    "ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -i 1 -f 1 -b) -r 1 " 
+    + " -d (ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -i 1 -f 2 -b) -r 2 "
+    + " -d  (ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -i 1 -f 3 -b) -r 3"
+    + " -d (moa.streams.generators.AgrawalGenerator -i 1 -f 4 -b) -w 12500 -p  250000) -w 125000 -p 25000) -w 125000 -p 25000",
+
+    "ConceptDriftStream -s (moa.streams.generators.HyperplaneGenerator -i 1 -a 10 -c 2 -k 10 -t 0.1) -r 1 "
+	+ "-d (moa.streams.generators.HyperplaneGenerator -i 2 -a 10 -c 2 -k 10 -t 0.1) "
+	+ "-p 50000 -w 25000", 
+
+
+
+    "ConceptDriftStream -s (moa.streams.generators.HyperplaneGenerator -i 1 -a 10 -c 2 -k 10 -t 0.1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.HyperplaneGenerator -i 2 -a 10 -c 2 -k 10 -t 0.1) -r 2 "
+	+ "-d (moa.streams.generators.HyperplaneGenerator -i 3 -a 10 -c 2 -k 10 -t 0.1) -r 3 "
+	+ "-p 30000 -w 15000) "
+	+ "-p 30000 -w 15000",
+
+    "ConceptDriftStream -s (moa.streams.generators.HyperplaneGenerator -i 1 -a 10 -c 2 -k 10 -t 0.1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.HyperplaneGenerator -i 2 -a 10 -c 2 -k 10 -t 0.1) -r 2 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.HyperplaneGenerator -i 3 -a 10 -c 2 -k 10 -t 0.1) -r 3 "
+	+ "-d (moa.streams.generators.HyperplaneGenerator -i 4 -a 10 -c 2 -k 10 -t 0.1) -r 4 "
+	+ "-p 25000 -w 12500)"
+	+ "-p 25000 -w 12500)"
+	+ "-p 25000 -w 12500",
+
+    "ConceptDriftStream -s (moa.streams.generators.RandomRBFGenerator -i 1 -a 10 -c 2 -r 1) -r 1 "
+	+ "-d (moa.streams.generators.RandomRBFGenerator -i 2 -a 10 -c 2 -r 2)"
+	+ "-p 50000 -w 25000",
+
+    "ConceptDriftStream -s (moa.streams.generators.RandomRBFGenerator -i 1 -a 10 -c 2 -r 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.RandomRBFGenerator -i 2 -a 10 -c 2 -r 2) -r 2 "
+	+ "-d (moa.streams.generators.RandomRBFGenerator -i 3 -a 10 -c 2 -r 3) "
+	+ "-p 30000 -w 15000) "
+	+ "-p 30000 -w 15000",
+
+    "ConceptDriftStream -s (moa.streams.generators.RandomRBFGenerator -i 1 -a 10 -c 2 -r 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.RandomRBFGenerator -i 2 -a 10 -c 2 -r 2) -r 2 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.RandomRBFGenerator -i 3 -a 10 -c 2 -r 3) -r 3 "
+	+ "-d (moa.streams.generators.RandomRBFGenerator -i 4 -a 10 -c 2 -r 4) "
+	+ "-p 25000 -w 12500) "
+	+ "-p 25000 -w 12500) "
+	+ "-p 25000 -w 12500",
+
+    "ConceptDriftStream -s (moa.streams.generators.RandomTreeGenerator -i 1 -o 5 -u 5 -c 2 -r 1) -r 1 "
+	+ "-d (moa.streams.generators.RandomTreeGenerator -i 2 -o 5 -u 5 -c 2 -r 2) "
+    + "-p 50000 -w 25000",
+
+    "ConceptDriftStream -s (moa.streams.generators.RandomTreeGenerator -i 1 -o 5 -u 5 -c 2 -r 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.RandomTreeGenerator -i 2 -o 5 -u 5 -c 2 -r 2) -r 2 "
+	+ "-d (moa.streams.generators.RandomTreeGenerator -i 3 -o 5 -u 5 -c 2 -r 3) "
+    + "-p 30000 -w 15000)"
+	+ "-p 30000 -w 15000",
+
+
+    "ConceptDriftStream -s (moa.streams.generators.RandomTreeGenerator -i 1 -o 5 -u 5 -c 2 -r 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.RandomTreeGenerator -i 2 -o 5 -u 5 -c 2 -r 2) -r 2 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.RandomTreeGenerator -i 3 -o 5 -u 5 -c 2 -r 3) -r 3 "
+	+ "-d (moa.streams.generators.RandomTreeGenerator -i 4 -o 5 -u 5 -c 2 -r 4) "
+    + "-p 25000 -w 12500) "
+	+ "-p 25000 -w 12500) "
+	+ "-p 25000 -w 12500",	
+
+    "ConceptDriftStream -s (moa.streams.generators.SineGenerator -i 1 -f 1) -r 1 "
+	+ "-d (moa.streams.generators.SineGenerator -i 2 -f 2)" 
+	+ "-p 50000 -w 25000",
+
+    "ConceptDriftStream -s (moa.streams.generators.SineGenerator -i 1 -f 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.SineGenerator -i 2 -f 2) -r 2 "
+	+ "-d (moa.streams.generators.SineGenerator -i 3 -f 3)"
+	+ "-p 30000 -w 15000) "
+	+ "-p 30000 -w 15000",
+
+    					 
+    "ConceptDriftStream -s (moa.streams.generators.SineGenerator -i 1 -f 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.SineGenerator -i 2 -f 2) -r 2 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.SineGenerator -i 3 -f 3) -r 3 "
+	+ "-d (moa.streams.generators.SineGenerator -i 4 -f 4) "
+	+ "-p 25000 -w 12500) "
+	+ "-p 25000 -w 12500) "
+	+ "-p 25000 -w 12500",
+
+
 ]
 
-real_datasets = [
-    "activity",
-    "connect-4",
-    "CovPokElec",
-    "covtype",
-    "crimes",
-    "fars",
-    "gas",
-    "hypothyroid",
-    "kddcup",
-    "kr-vs-k",
-    "lymph",
-    "olympic",
-    "poker",
-    "sensor",
-    "shuttle",
-    "tags",
-    "thyroid",
-    "zoo",
+exp_names = [
+    "AGRAWAL_1_DRIFT",
+    "AGRAWAL_2_DRIFT",
+    "AGRAWAL_3_DRIFT",
+    "HYPERPLANE_1_DRIFT",
+    "HYPERPLANE_2_DRIFT",
+    "HYPERPLANE_3_DRIFT",
+    "RBF_1_DRIFT",
+    "RBF_2_DRIFT",
+    "RBF_3_DRIFT",
+    "RT_1_DRIFT",
+    "RT_2_DRIFT",
+    "RT_3_DRIFT",
+    "SINE_1_DRIFT",
+    "SINE_2_DRIFT",
+    "SINE_3_DRIFT",
 ]
 
+classifiers = [
+    "moa.classifiers.trees.HoeffdingTree",
+    "moa.classifiers.meta.AdaptiveRandomForest",
+    "moa.classifiers.meta.LeveragingBag",
+    "moa.classifiers.bayes.NaiveBayes",
+]
 
-al_strategies = ["Random"]
+classifiers_name = ["HT", "ARF", "LB", "NB"]
+
+al_uncertainty_methods = [
+
+                    "FixedUncertainty",
+                    "VarUncertainty",
+                    "RandVarUncertainty",
+                    "SelSampling"]
 
 
 def cmdlineparse(args):
     parser = argparse.ArgumentParser(description="Run MOA scripts")
 
+
+
     parser.add_argument(
-        "--datasets", type=str, default=None,
+        "--results-path", type=str, default="results/",
     )
 
     parser.add_argument(
-        "--results-path", type=str, default="results/uncertainty-kappaoversampling/",
-    )
-
-    parser.add_argument(
-        "--max-processes", type=int, default=4,
+        "--max-processes", type=int, default=1,
     )
 
     args = parser.parse_args(args)
@@ -64,29 +151,23 @@ def cmdlineparse(args):
 
 def train(args):
 
-    if args.datasets == "SEMI":
-        datasets = semi_synth_datasets
-        args.results_path = args.results_path + "semi-synth/"
-        dataset_path = "datasets/semi-synth/"
-    else:
-        datasets = real_datasets
-        args.results_path = args.results_path + "real/"
-        dataset_path = "datasets/real/"
+
 
     VMargs = "-Xms8g -Xmx1024g"
-    jarFile = "kappaoversampling-1.0-jar-with-dependencies.jar"
+    jarFile = "DBAL-1.0-SNAPSHOT-jar-with-dependencies.jar"
 
-    al_budget = ["1.0", "0.5", "0.2", "0.1", "0.01", "0.05", "0.005", "0.001"]
+    al_budget = ["1.0", "0.2", "0.1", "0.05", "0.01"]
 
-    imbalance_weight = ["1"]
+    #al_budget = ["0.5"]
 
-    class_windows = [1000, 500, 200, 100, 50, 10, 10, 10]
+
 
     results = [
-        (dt,budget)
-        for dt in datasets
-        
+        (generator, classifier, budget, al_strategy)
+        for generator in generators
+        for classifier in classifiers
         for budget in al_budget
+        for al_strategy in al_uncertainty_methods
      
     ]
 
@@ -99,38 +180,27 @@ def train(args):
 
 
 
-    for (dataset,  budget) in results:
-        class_window = class_windows[al_budget.index(budget)]
+    for (generator, classifier,  budget, al_strategy) in results:
+        exp_name = exp_names[generators.index(generator)]
 
-        cmd = ("java "
-                + VMargs
-                + " -javaagent:sizeofag-1.0.4.jar -cp "
-                + jarFile
-                + " "
-                + "moa.DoTask moa.tasks.EvaluateInterleavedTestThenTrain"
-                + ' -e "(MultiClassImbalancedPerformanceEvaluator -w 500)"'
-                + ' -s "(ArffFileStream -f {}'.format(dataset_path)
-                + dataset
-                + '.arff)"'
-                + ' -l "(moa.classifiers.meta.imbalanced.OSAMP -w {} -b {})"'.format(class_window, budget)
-                + " -f 500"
-                + " -d "
-                + args.results_path
-                + "OSAMP"
-                + "-"
-                + dataset
-                + "-"
-                + budget
-                + ".csv & exit")
+        cl_string = "moa.classifiers.active.ALUncertainty -l {} -b {} -d {}".format(classifier, budget, al_strategy)
+
+        cmd = ("java " + VMargs + " -javaagent:sizeofag-1.0.4.jar -cp " + jarFile + " "
+						+ "moa.DoTask EvaluateInterleavedTestThenTrain"
+						+ " -e \"(ImbalancedPerformanceEvaluator -w 500)\""
+						+ " -s \"(" + generator + ")\"" 
+						+ " -l \"(" + cl_string + ")\""
+						+ " -i 200000 -f 500"
+						+ " -d " + args.results_path + "/" + al_strategy + "/" + classifiers_name[classifiers.index(classifier)] + "-"+ budget +"-" + exp_name + ".csv &")
         
 
         print(cmd)
         processes.append(
-            subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, close_fds=True)
+            subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
         )
 
         while len(processes) >= args.max_processes:
-            time.sleep(30)
+            time.sleep(5)
 
             # Print outputs and remove finished processes from list
             finished_processes = [
@@ -148,7 +218,7 @@ def train(args):
                 processes = [p for i, p in enumerate(processes) if i != finished_i]
 
     while len(processes):
-        time.sleep(30)
+        time.sleep(5)
 
         # Print outputs and remove finished processes from list
         finished_processes = [

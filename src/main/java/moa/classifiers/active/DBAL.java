@@ -40,12 +40,23 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             , 0,
             Integer.MAX_VALUE );
 
+
+    public IntOption driftWindowOption = new IntOption ("driftWindow", 'q', "Drift window for increasing budget" , 100
+            , 0,
+            Integer.MAX_VALUE );
+
+    public IntOption warningWindowOption = new IntOption ("warningWindow", 'r', "warning window for increasing budget" , 50
+            , 0,
+            Integer.MAX_VALUE );
+
     public ClassOption driftDetectorOption = new ClassOption("warningDetector", 'w', "Warning Detector for increasing" +
             " " +
-            "budget", AbstractChangeDetector.class, "moa.classifiers.core.driftdetection.DDM");
+            "budget", AbstractChangeDetector.class, "moa.classifiers.core.driftdetection.ADWINChangeDetector " +
+            "-a 0.0001");
 
     public ClassOption warningDetectorOption = new ClassOption("driftDetector", 'd', "Drift Detector for increasing " +
-            "budget", AbstractChangeDetector.class, "moa.classifiers.core.driftdetection.DDM");
+            "budget", AbstractChangeDetector.class, "moa.classifiers.core.driftdetection.ADWINChangeDetector " +
+            "-a 0.001");
 
 
     public Classifier classifier;
@@ -57,7 +68,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     public boolean driftHappening;
     public boolean warningHappening;
     public int gracePeriod;
-    public int labeledInstances;
+    public int lastLabelAcq;
     public int instIndex;
     public int spendedBudget;
     public int correctInstances;
@@ -97,7 +108,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         this.driftHappening = false;
         this.classifierRandom = new Random(42);
         this.gracePeriod = this.gracePeriodOption.getValue();
-        this.labeledInstances = 0;
+        this.lastLabelAcq = 0;
         this.instIndex = 0;
         this.correctInstances = 0;
         this.spendedBudget = 0;
@@ -105,8 +116,8 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         evaluator.widthOption.setValue(300);
         this.al_decider = new Uncertainty(1);
 
-        this.warningWindow = 50;
-        this.driftWindow = 100;
+        this.warningWindow = this.warningWindowOption.getValue();
+        this.driftWindow = this.driftWindowOption.getValue();
 
         this.probability_correct = new double[2][2];
         for (double[] row: probability_correct)
@@ -142,15 +153,15 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
 
 
-        if (this.labeledInstances < this.gracePeriod){
+        if (this.lastLabelAcq < this.gracePeriod){
             this.classifier.trainOnInstance(instance);
-            this.labeledInstances++;
+            this.lastLabelAcq++;
         } else if (al_decider.toLearn(this.classifier.getVotesForInstance(instance))) {
             this.driftDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
             this.warningDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
             this.classifier.trainOnInstance(instance);
             this.backgroundClassifier.trainOnInstance(instance);
-            this.labeledInstances++;
+            this.lastLabelAcq++;
 
             if (this.warningHappening){
                 if (this.warningInstances < this.warningWindow) {
@@ -163,11 +174,11 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
                     this.warningHappening = false;
 
                     double [][] proportional =  this.getProportionsCorrect();
-                    System.out.println("instance number");
-                    System.out.println(this.correct_classified_counter[0]);
-                    System.out.println(this.correct_classified_counter[1]);
-                    System.out.println(Arrays.toString(proportional[0]));
-                    System.out.println(Arrays.toString(proportional[1]));
+                    //System.out.println("instance number");
+                    //System.out.println(this.correct_classified_counter[0]);
+                    //System.out.println(this.correct_classified_counter[1]);
+                    //System.out.println(Arrays.toString(proportional[0]));
+                    //System.out.println(Arrays.toString(proportional[1]));
                 }
 
                 this.al_decider.setNewBudget(this.budget);
@@ -191,10 +202,10 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
                     //this.al_decider.costLabeling = 0;
                     //this.al_decider.lastLabelAcq = 0;
 
-                    System.out.println("instance number");
+                    //System.out.println("instance number");
 
-                    System.out.println(Arrays.toString(proportional[0]));
-                    System.out.println(Arrays.toString(proportional[1]));
+                    //System.out.println(Arrays.toString(proportional[0]));
+                    //System.out.println(Arrays.toString(proportional[1]));
                     //this.al_decider.lastLabelAcq = this.beforeDrift[0];
                     //this.al_decider.costLabeling = this.beforeDrift[1];
 
@@ -271,14 +282,21 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     }
 
     @Override
+    protected Measurement[] getModelMeasurementsImpl() {
+        List<Measurement> measurementList = new LinkedList<Measurement>();
+        measurementList.add( new Measurement("Labeled Instances", this.getLastLabelAcqReport()));
+        return measurementList.toArray(new Measurement[measurementList.size()]);
+    }
+
+    @Override
     public double[] getVotesForInstance(Instance instance) {
         return this.classifier.getVotesForInstance(instance);
     }
 
-    @Override
-    protected Measurement[] getModelMeasurementsImpl() {
+    //@Override
+    /*protected Measurement[] getModelMeasurementsImpl() {
         return new Measurement[0];
-    }
+    }*/
 
     @Override
     public void getModelDescription(java.lang.StringBuilder stringBuilder, int i) {
@@ -287,7 +305,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
     @Override
     public int getLastLabelAcqReport() {
-        return this.labeledInstances - this.gracePeriod;
+        return 20;
     }
 
     @Override
