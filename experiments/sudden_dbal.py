@@ -6,96 +6,100 @@ import os
 
 generators = [
     "ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -i 1 -f 1 -b) -r 1" 
-    + " -d (moa.streams.generators.AgrawalGenerator -i 1 -f 2 -b) -w 25000 -p 50000", 
+    + " -d (moa.streams.generators.AgrawalGenerator -i 1 -f 2 -b) -w 1 -p 50000", 
     
     
     "ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -i 1 -f 1 -b) -r 1 " 
     + " -d (ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -i 1 -f 2 -b) -r 2 "
-    + " -d  (moa.streams.generators.AgrawalGenerator -i 1 -f 3 -b) -w 15000 -p 30000) -w 15000 -p 30000",
+    + " -d  (moa.streams.generators.AgrawalGenerator -i 1 -f 3 -b) -w 1 -p 30000) -w 1 -p 30000",
 
     "ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -i 1 -f 1 -b) -r 1 " 
     + " -d (ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -i 1 -f 2 -b) -r 2 "
     + " -d  (ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -i 1 -f 3 -b) -r 3"
-    + " -d (moa.streams.generators.AgrawalGenerator -i 1 -f 4 -b) -w 12500 -p  250000) -w 125000 -p 25000) -w 125000 -p 25000",
+    + " -d (moa.streams.generators.AgrawalGenerator -i 1 -f 4 -b)"
+    +"-w 1 -p 250000)"
+    +"-w 1 -p 25000)"
+    +"-w 1 -p 25000",
 
     "ConceptDriftStream -s (moa.streams.generators.HyperplaneGenerator -i 1 -a 10 -c 2 -k 10 -t 0.1) -r 1 "
 	+ "-d (moa.streams.generators.HyperplaneGenerator -i 2 -a 10 -c 2 -k 10 -t 0.1) "
-	+ "-p 50000 -w 25000", 
+	+ "-p 50000 -w 1", 
 
 
 
     "ConceptDriftStream -s (moa.streams.generators.HyperplaneGenerator -i 1 -a 10 -c 2 -k 10 -t 0.1) -r 1 "
 	+ "-d (ConceptDriftStream -s (moa.streams.generators.HyperplaneGenerator -i 2 -a 10 -c 2 -k 10 -t 0.1) -r 2 "
 	+ "-d (moa.streams.generators.HyperplaneGenerator -i 3 -a 10 -c 2 -k 10 -t 0.1) -r 3 "
-	+ "-p 30000 -w 15000) "
-	+ "-p 30000 -w 15000",
+	+ "-p 30000 -w 1) "
+	+ "-p 30000 -w 1",
 
     "ConceptDriftStream -s (moa.streams.generators.HyperplaneGenerator -i 1 -a 10 -c 2 -k 10 -t 0.1) -r 1 "
 	+ "-d (ConceptDriftStream -s (moa.streams.generators.HyperplaneGenerator -i 2 -a 10 -c 2 -k 10 -t 0.1) -r 2 "
 	+ "-d (ConceptDriftStream -s (moa.streams.generators.HyperplaneGenerator -i 3 -a 10 -c 2 -k 10 -t 0.1) -r 3 "
 	+ "-d (moa.streams.generators.HyperplaneGenerator -i 4 -a 10 -c 2 -k 10 -t 0.1) -r 4 "
-	+ "-p 25000 -w 12500)"
-	+ "-p 25000 -w 12500)"
-	+ "-p 25000 -w 12500",
+	+ "-p 25000 -w 1)"
+	+ "-p 25000 -w 1)"
+	+ "-p 25000 -w 1",
 
     "ConceptDriftStream -s (moa.streams.generators.RandomRBFGenerator -i 1 -a 10 -c 2 -r 1) -r 1 "
 	+ "-d (moa.streams.generators.RandomRBFGenerator -i 2 -a 10 -c 2 -r 2)"
-	+ "-p 50000 -w 25000",
+	+ "-p 50000 -w 1",
 
     "ConceptDriftStream -s (moa.streams.generators.RandomRBFGenerator -i 1 -a 10 -c 2 -r 1) -r 1 "
 	+ "-d (ConceptDriftStream -s (moa.streams.generators.RandomRBFGenerator -i 2 -a 10 -c 2 -r 2) -r 2 "
 	+ "-d (moa.streams.generators.RandomRBFGenerator -i 3 -a 10 -c 2 -r 3) "
-	+ "-p 30000 -w 15000) "
-	+ "-p 30000 -w 15000",
+	+ "-p 30000 -w 1) "
+	+ "-p 30000 -w 1",
 
     "ConceptDriftStream -s (moa.streams.generators.RandomRBFGenerator -i 1 -a 10 -c 2 -r 1) -r 1 "
 	+ "-d (ConceptDriftStream -s (moa.streams.generators.RandomRBFGenerator -i 2 -a 10 -c 2 -r 2) -r 2 "
 	+ "-d (ConceptDriftStream -s (moa.streams.generators.RandomRBFGenerator -i 3 -a 10 -c 2 -r 3) -r 3 "
 	+ "-d (moa.streams.generators.RandomRBFGenerator -i 4 -a 10 -c 2 -r 4) "
-	+ "-p 25000 -w 12500) "
-	+ "-p 25000 -w 12500) "
-	+ "-p 25000 -w 12500",
+	+ "-p 25000 -w 1) "
+	+ "-p 25000 -w 1) "
+	+ "-p 25000 -w 1",
 
     "ConceptDriftStream -s (moa.streams.generators.RandomTreeGenerator -i 1 -o 5 -u 5 -c 2 -r 1) -r 1 "
 	+ "-d (moa.streams.generators.RandomTreeGenerator -i 2 -o 5 -u 5 -c 2 -r 2) "
-    + "-p 50000 -w 25000",
+    + "-p 50000 -w 1",
 
     "ConceptDriftStream -s (moa.streams.generators.RandomTreeGenerator -i 1 -o 5 -u 5 -c 2 -r 1) -r 1 "
 	+ "-d (ConceptDriftStream -s (moa.streams.generators.RandomTreeGenerator -i 2 -o 5 -u 5 -c 2 -r 2) -r 2 "
 	+ "-d (moa.streams.generators.RandomTreeGenerator -i 3 -o 5 -u 5 -c 2 -r 3) "
-    + "-p 30000 -w 15000)"
-	+ "-p 30000 -w 15000",
+    + "-p 30000 -w 1)"
+	+ "-p 30000 -w 1",
 
 
     "ConceptDriftStream -s (moa.streams.generators.RandomTreeGenerator -i 1 -o 5 -u 5 -c 2 -r 1) -r 1 "
 	+ "-d (ConceptDriftStream -s (moa.streams.generators.RandomTreeGenerator -i 2 -o 5 -u 5 -c 2 -r 2) -r 2 "
 	+ "-d (ConceptDriftStream -s (moa.streams.generators.RandomTreeGenerator -i 3 -o 5 -u 5 -c 2 -r 3) -r 3 "
 	+ "-d (moa.streams.generators.RandomTreeGenerator -i 4 -o 5 -u 5 -c 2 -r 4) "
-    + "-p 25000 -w 12500) "
-	+ "-p 25000 -w 12500) "
-	+ "-p 25000 -w 12500",	
+    + "-p 25000 -w 1) "
+	+ "-p 25000 -w 1) "
+	+ "-p 25000 -w 1",	
 
     "ConceptDriftStream -s (moa.streams.generators.SineGenerator -i 1 -f 1) -r 1 "
 	+ "-d (moa.streams.generators.SineGenerator -i 2 -f 2)" 
-	+ "-p 50000 -w 25000",
+	+ "-p 50000 -w 1",
 
     "ConceptDriftStream -s (moa.streams.generators.SineGenerator -i 1 -f 1) -r 1 "
 	+ "-d (ConceptDriftStream -s (moa.streams.generators.SineGenerator -i 2 -f 2) -r 2 "
 	+ "-d (moa.streams.generators.SineGenerator -i 3 -f 3)"
-	+ "-p 30000 -w 15000) "
-	+ "-p 30000 -w 15000",
+	+ "-p 30000 -w 1) "
+	+ "-p 30000 -w 1",
 
     					 
     "ConceptDriftStream -s (moa.streams.generators.SineGenerator -i 1 -f 1) -r 1 "
 	+ "-d (ConceptDriftStream -s (moa.streams.generators.SineGenerator -i 2 -f 2) -r 2 "
 	+ "-d (ConceptDriftStream -s (moa.streams.generators.SineGenerator -i 3 -f 3) -r 3 "
 	+ "-d (moa.streams.generators.SineGenerator -i 4 -f 4) "
-	+ "-p 25000 -w 12500) "
-	+ "-p 25000 -w 12500) "
-	+ "-p 25000 -w 12500",
+	+ "-p 25000 -w 1) "
+	+ "-p 25000 -w 1) "
+	+ "-p 25000 -w 1",
 
 
 ]
+
 
 exp_names = [
     "AGRAWAL_1_DRIFT",
@@ -125,6 +129,11 @@ classifiers = [
 classifiers_name = ["HT", "ARF", "LB", "NB"]
 
 
+driftWindowOptions = ["50", "100" , "200"]
+
+warningWindowOptions = ["25", "50", "100"]
+
+
 def cmdlineparse(args):
     parser = argparse.ArgumentParser(description="Run MOA scripts")
 
@@ -142,6 +151,9 @@ def cmdlineparse(args):
     return args
 
 
+
+
+
 def train(args):
 
 
@@ -149,18 +161,20 @@ def train(args):
     VMargs = "-Xms8g -Xmx1024g"
     jarFile = "DBAL-1.0-SNAPSHOT-jar-with-dependencies.jar"
 
-    al_budget = ["1.0", "0.2", "0.1", "0.05", "0.01"]
+    #al_budget = ["1.0", "0.2", "0.1", "0.05", "0.01"]
 
     #al_budget = ["0.5"]
 
 
 
     results = [
-        (generator, classifier, budget)
+        (generator, classifier, driftWindow)
         for generator in generators
         for classifier in classifiers
+        for driftWindow in driftWindowOptions
+
         
-        for budget in al_budget
+        #for budget in al_budget
      
     ]
 
@@ -173,18 +187,19 @@ def train(args):
 
 
 
-    for (generator, classifier,  budget) in results:
+    for (generator, classifier, driftWindow) in results:
         exp_name = exp_names[generators.index(generator)]
+        warningWindow = warningWindowOptions[driftWindowOptions.index(driftWindow)]
 
-        cl_string = "moa.classifiers.active.ALRandom -l {} -b (moa.classifiers.active.budget.FixedBM -b {})".format(classifier, budget)
+        cl_string = "moa.classifiers.active.DBAL -l {} -q {} -r {}".format(classifier, driftWindow, warningWindow)
 
         cmd = ("java " + VMargs + " -javaagent:sizeofag-1.0.4.jar -cp " + jarFile + " "
-						+ "moa.DoTask EvaluateInterleavedTestThenTrain"
-						+ " -e \"(ImbalancedPerformanceEvaluator -w 500)\""
+						+ "moa.DoTask moa.tasks.meta.ALPrequentialEvaluationTask"
+						+ " -e \"(ALMultiClassImbalancedPerformanceEvaluator -w 500)\""
 						+ " -s \"(" + generator + ")\"" 
 						+ " -l \"(" + cl_string + ")\""
 						+ " -i 100000 -f 500"
-						+ " -d " + args.results_path + classifiers_name[classifiers.index(classifier)] + "-"+ budget +"-" + exp_name + ".csv &")
+						+ " -d " + args.results_path + classifiers_name[classifiers.index(classifier)] + "-"+ driftWindow + "-" + warningWindow + "-" + exp_name + ".csv &")
         
 
         print(cmd)

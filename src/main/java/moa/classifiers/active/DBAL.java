@@ -305,7 +305,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
     @Override
     public int getLastLabelAcqReport() {
-        return 20;
+        return this.lastLabelAcq - this.gracePeriod;
     }
 
     @Override

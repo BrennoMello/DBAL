@@ -125,6 +125,11 @@ classifiers = [
 classifiers_name = ["HT", "ARF", "LB", "NB"]
 
 
+driftWindowOptions = ["50", "100" , "200"]
+
+warningWindowOptions = ["25", "50", "100"]
+
+
 def cmdlineparse(args):
     parser = argparse.ArgumentParser(description="Run MOA scripts")
 
@@ -142,6 +147,9 @@ def cmdlineparse(args):
     return args
 
 
+
+
+
 def train(args):
 
 
@@ -149,18 +157,20 @@ def train(args):
     VMargs = "-Xms8g -Xmx1024g"
     jarFile = "DBAL-1.0-SNAPSHOT-jar-with-dependencies.jar"
 
-    al_budget = ["1.0", "0.2", "0.1", "0.05", "0.01"]
+    #al_budget = ["1.0", "0.2", "0.1", "0.05", "0.01"]
 
     #al_budget = ["0.5"]
 
 
 
     results = [
-        (generator, classifier, budget)
+        (generator, classifier, driftWindow)
         for generator in generators
         for classifier in classifiers
+        for driftWindow in driftWindowOptions
+
         
-        for budget in al_budget
+        #for budget in al_budget
      
     ]
 
@@ -173,18 +183,19 @@ def train(args):
 
 
 
-    for (generator, classifier,  budget) in results:
+    for (generator, classifier, driftWindow) in results:
         exp_name = exp_names[generators.index(generator)]
+        warningWindow = warningWindowOptions[driftWindowOptions.index(driftWindow)]
 
-        cl_string = "moa.classifiers.active.ALRandom -l {} -b (moa.classifiers.active.budget.FixedBM -b {})".format(classifier, budget)
+        cl_string = "moa.classifiers.active.DBAL -l {} -q {} -r {}".format(classifier, driftWindow, warningWindow)
 
         cmd = ("java " + VMargs + " -javaagent:sizeofag-1.0.4.jar -cp " + jarFile + " "
-						+ "moa.DoTask EvaluateInterleavedTestThenTrain"
-						+ " -e \"(ImbalancedPerformanceEvaluator -w 500)\""
+						+ "moa.DoTask moa.tasks.meta.ALPrequentialEvaluationTask"
+						+ " -e \"(ALMultiClassImbalancedPerformanceEvaluator -w 500)\""
 						+ " -s \"(" + generator + ")\"" 
 						+ " -l \"(" + cl_string + ")\""
 						+ " -i 100000 -f 500"
-						+ " -d " + args.results_path + classifiers_name[classifiers.index(classifier)] + "-"+ budget +"-" + exp_name + ".csv &")
+						+ " -d " + args.results_path + classifiers_name[classifiers.index(classifier)] + "-"+ driftWindow + "-" + warningWindow + "-" + exp_name + ".csv &")
         
 
         print(cmd)

@@ -193,7 +193,7 @@ def train(args):
 						+ " -e \"(ImbalancedPerformanceEvaluator -w 500)\""
 						+ " -s \"(" + generator + ")\"" 
 						+ " -l \"(" + cl_string + ")\""
-						+ " -i 200000 -f 500"
+						+ " -i 100000 -f 500"
 						+ " -d " + args.results_path + "/" + al_strategy + "/" + classifiers_name[classifiers.index(classifier)] + "-"+ budget +"-" + exp_name + ".csv &")
         
 
