@@ -98,8 +98,45 @@ generators = [
 	+ "-p 25000 -w 1",
 
 
-]
+    "ConceptDriftStream -s (moa.streams.generators.MixedGenerator -i 1 -f 1) -r 1 "
+	+ "-d (moa.streams.generators.MixedGenerator -i 2 -f 2) "
+	+ "-p 50000 -w 1",
 
+    "ConceptDriftStream -s (moa.streams.generators.MixedGenerator -i 1 -f 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.MixedGenerator -i 2 -f 2) -r 2 "
+	+ "-d (moa.streams.generators.MixedGenerator -i 3 -f 1) "
+	+ "-p 30000 -w 1)"
+	+ "-p 30000 -w 1 ",
+
+    "ConceptDriftStream -s (moa.streams.generators.MixedGenerator -i 1 -f 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.MixedGenerator -i 2 -f 2) -r 2 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.MixedGenerator -i 3 -f 1) -r 3 "
+	+ "-d (moa.streams.generators.MixedGenerator -i 4 -f 2)  "
+	+ "-p 25000 -w 1) "
+	+ "-p 25000 -w 1) "
+	+ "-p 25000 -w 1 ",
+
+    "ConceptDriftStream -s (moa.streams.generators.AssetNegotiationGenerator -i 1 -f 1) -r 1 "
+	+ "-d (moa.streams.generators.AssetNegotiationGenerator -i 2 -f 2)"
+	+ "-p 50000 -w 1",
+
+    "ConceptDriftStream -s (moa.streams.generators.AssetNegotiationGenerator -i 1 -f 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.AssetNegotiationGenerator -i 2 -f 2) -r 2 "
+	+ "-d (moa.streams.generators.AssetNegotiationGenerator -i 3 -f 3)  "
+	+ "-p 30000 -w 1) "
+	+ "-p 30000 -w 1",
+
+
+    "ConceptDriftStream -s (moa.streams.generators.AssetNegotiationGenerator -i 1 -f 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.AssetNegotiationGenerator -i 2 -f 2) -r 2 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.AssetNegotiationGenerator -i 3 -f 3) -r 3 "
+	+ "-d (moa.streams.generators.AssetNegotiationGenerator -i 4 -f 4)  "
+	+ "-p 25000 -w 1) "
+	+ "-p 25000 -w 1) "
+	+ "-p 25000 -w 1",
+
+
+]
 
 exp_names = [
     "AGRAWAL_1_DRIFT",
@@ -117,21 +154,31 @@ exp_names = [
     "SINE_1_DRIFT",
     "SINE_2_DRIFT",
     "SINE_3_DRIFT",
+    "MIXED_1_DRIFT",
+    "MIXED_2_DRIFT",
+    "MIXED_3_DRIFT",
+    "ASSET_1_DRIFT",
+    "ASSET_2_DRIFT",
+    "ASSET_3_DRIFT",
 ]
 
 classifiers = [
     "moa.classifiers.trees.HoeffdingTree",
     "moa.classifiers.meta.AdaptiveRandomForest",
+    "moa.classifiers.meta.StreamingRandomPatches",
     "moa.classifiers.meta.LeveragingBag",
     "moa.classifiers.bayes.NaiveBayes",
 ]
 
-classifiers_name = ["HT", "ARF", "LB", "NB"]
+classifiers_name = ["HT", "ARF", "LB", "SRP", "NB"]
 
 
-driftWindowOptions = ["50", "100" , "200"]
+minimum_budget = ["0.01", "0.05", "0.1"]
 
-warningWindowOptions = ["25", "50", "100"]
+
+driftWindowOptions = ["100"]
+
+warningWindowOptions = ["50"]
 
 
 def cmdlineparse(args):
@@ -168,10 +215,11 @@ def train(args):
 
 
     results = [
-        (generator, classifier, driftWindow)
+        (generator, classifier, driftWindow, budget)
         for generator in generators
         for classifier in classifiers
         for driftWindow in driftWindowOptions
+        for budget in minimum_budget
 
         
         #for budget in al_budget
@@ -187,11 +235,11 @@ def train(args):
 
 
 
-    for (generator, classifier, driftWindow) in results:
+    for (generator, classifier, driftWindow, budget) in results:
         exp_name = exp_names[generators.index(generator)]
         warningWindow = warningWindowOptions[driftWindowOptions.index(driftWindow)]
 
-        cl_string = "moa.classifiers.active.DBAL -l {} -q {} -r {}".format(classifier, driftWindow, warningWindow)
+        cl_string = "moa.classifiers.active.DBAL -l {} -q {} -r {} -m {}".format(classifier, driftWindow, warningWindow, budget)
 
         cmd = ("java " + VMargs + " -javaagent:sizeofag-1.0.4.jar -cp " + jarFile + " "
 						+ "moa.DoTask moa.tasks.meta.ALPrequentialEvaluationTask"
@@ -199,7 +247,7 @@ def train(args):
 						+ " -s \"(" + generator + ")\"" 
 						+ " -l \"(" + cl_string + ")\""
 						+ " -i 100000 -f 500"
-						+ " -d " + args.results_path + classifiers_name[classifiers.index(classifier)] + "-"+ driftWindow + "-" + warningWindow + "-" + exp_name + ".csv &")
+						+ " -d " + args.results_path + classifiers_name[classifiers.index(classifier)] + "-"+ driftWindow + "-" + warningWindow + "-" + budget  +"-" + exp_name + ".csv &")
         
 
         print(cmd)

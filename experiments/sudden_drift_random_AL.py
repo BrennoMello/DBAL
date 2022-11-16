@@ -97,6 +97,43 @@ generators = [
 	+ "-p 25000 -w 1) "
 	+ "-p 25000 -w 1",
 
+    "ConceptDriftStream -s (moa.streams.generators.MixedGenerator -i 1 -f 1) -r 1 "
+	+ "-d (moa.streams.generators.MixedGenerator -i 2 -f 2) "
+	+ "-p 50000 -w 1",
+
+    "ConceptDriftStream -s (moa.streams.generators.MixedGenerator -i 1 -f 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.MixedGenerator -i 2 -f 2) -r 2 "
+	+ "-d (moa.streams.generators.MixedGenerator -i 3 -f 1) "
+	+ "-p 30000 -w 1)"
+	+ "-p 30000 -w 1 ",
+
+    "ConceptDriftStream -s (moa.streams.generators.MixedGenerator -i 1 -f 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.MixedGenerator -i 2 -f 2) -r 2 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.MixedGenerator -i 3 -f 1) -r 3 "
+	+ "-d (moa.streams.generators.MixedGenerator -i 4 -f 2)  "
+	+ "-p 25000 -w 1) "
+	+ "-p 25000 -w 1) "
+	+ "-p 25000 -w 1 ",
+
+    "ConceptDriftStream -s (moa.streams.generators.AssetNegotiationGenerator -i 1 -f 1) -r 1 "
+	+ "-d (moa.streams.generators.AssetNegotiationGenerator -i 2 -f 2)"
+	+ "-p 50000 -w 1",
+
+    "ConceptDriftStream -s (moa.streams.generators.AssetNegotiationGenerator -i 1 -f 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.AssetNegotiationGenerator -i 2 -f 2) -r 2 "
+	+ "-d (moa.streams.generators.AssetNegotiationGenerator -i 3 -f 3)  "
+	+ "-p 30000 -w 1) "
+	+ "-p 30000 -w 1",
+
+
+    "ConceptDriftStream -s (moa.streams.generators.AssetNegotiationGenerator -i 1 -f 1) -r 1 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.AssetNegotiationGenerator -i 2 -f 2) -r 2 "
+	+ "-d (ConceptDriftStream -s (moa.streams.generators.AssetNegotiationGenerator -i 3 -f 3) -r 3 "
+	+ "-d (moa.streams.generators.AssetNegotiationGenerator -i 4 -f 4)  "
+	+ "-p 25000 -w 1) "
+	+ "-p 25000 -w 1) "
+	+ "-p 25000 -w 1",
+
 
 ]
 
@@ -116,16 +153,23 @@ exp_names = [
     "SINE_1_DRIFT",
     "SINE_2_DRIFT",
     "SINE_3_DRIFT",
+    "MIXED_1_DRIFT",
+    "MIXED_2_DRIFT",
+    "MIXED_3_DRIFT",
+    "ASSET_1_DRIFT",
+    "ASSET_2_DRIFT",
+    "ASSET_3_DRIFT",
 ]
 
 classifiers = [
     "moa.classifiers.trees.HoeffdingTree",
     "moa.classifiers.meta.AdaptiveRandomForest",
+    "moa.classifiers.meta.StreamingRandomPatches",
     "moa.classifiers.meta.LeveragingBag",
     "moa.classifiers.bayes.NaiveBayes",
 ]
 
-classifiers_name = ["HT", "ARF", "LB", "NB"]
+classifiers_name = ["HT", "ARF", "LB", "SRP", "NB"]
 
 
 def cmdlineparse(args):
@@ -182,8 +226,8 @@ def train(args):
         cl_string = "moa.classifiers.active.ALRandom -l {} -b (moa.classifiers.active.budget.FixedBM -b {})".format(classifier, budget)
 
         cmd = ("java " + VMargs + " -javaagent:sizeofag-1.0.4.jar -cp " + jarFile + " "
-						+ "moa.DoTask EvaluateInterleavedTestThenTrain"
-						+ " -e \"(ImbalancedPerformanceEvaluator -w 500)\""
+						+ "moa.DoTask moa.tasks.meta.ALPrequentialEvaluationTask"
+						+ " -e \"(ALMultiClassImbalancedPerformanceEvaluator -w 500)\""
 						+ " -s \"(" + generator + ")\"" 
 						+ " -l \"(" + cl_string + ")\""
 						+ " -i 100000 -f 500"

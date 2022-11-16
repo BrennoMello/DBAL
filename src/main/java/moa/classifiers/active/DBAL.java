@@ -89,6 +89,8 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
     public int [] beforeDrift = new int[2];
 
+    public int lastInstancesLabeled = 0;
+
 
 
 
@@ -174,11 +176,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
                     this.warningHappening = false;
 
                     double [][] proportional =  this.getProportionsCorrect();
-                    //System.out.println("instance number");
-                    //System.out.println(this.correct_classified_counter[0]);
-                    //System.out.println(this.correct_classified_counter[1]);
-                    //System.out.println(Arrays.toString(proportional[0]));
-                    //System.out.println(Arrays.toString(proportional[1]));
+
                 }
 
                 this.al_decider.setNewBudget(this.budget);
@@ -199,15 +197,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
                     this.budget = this.minBudgetOption.getValue();
                     double [][] proportional =  this.getProportionsIncorrect();
 
-                    //this.al_decider.costLabeling = 0;
-                    //this.al_decider.lastLabelAcq = 0;
 
-                    //System.out.println("instance number");
-
-                    //System.out.println(Arrays.toString(proportional[0]));
-                    //System.out.println(Arrays.toString(proportional[1]));
-                    //this.al_decider.lastLabelAcq = this.beforeDrift[0];
-                    //this.al_decider.costLabeling = this.beforeDrift[1];
 
                 }
                 this.al_decider.setNewBudget(this.budget);
@@ -219,7 +209,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
 
         if (this.warningDetector.getChange()){
-            System.out.println("Drift Warning Detected in position " + this.instIndex); //Here we have to adjust
+            //System.out.println("Drift Warning Detected in position " + this.instIndex); //Here we have to adjust
             this.warningDetector = ((ChangeDetector) this.getPreparedClassOption(this.warningDetectorOption)).copy();
             this.backgroundClassifier = ((Classifier) this.getPreparedClassOption(this.baseLearnerOption)).copy();
             this.warningHappening = true;
@@ -232,10 +222,10 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
         if (this.driftDetector.getChange()){
 
-            System.out.println("reset classifiers");
+            //System.out.println("reset classifiers");
             this.driftDetector = ((ChangeDetector) this.getPreparedClassOption(this.driftDetectorOption)).copy();
             //this.classifier = this.backgroundClassifier.copy();
-            System.out.println("Drift Detected in position " + this.instIndex); //Here we have to adjust
+            //System.out.println("Drift Detected in position " + this.instIndex); //Here we have to adjust
 
             //this.beforeDrift[0] = this.al_decider.lastLabelAcq;
             //this.beforeDrift[1] = this.al_decider.costLabeling;
@@ -305,7 +295,12 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
     @Override
     public int getLastLabelAcqReport() {
-        return this.lastLabelAcq - this.gracePeriod;
+
+        int labeledSoFar = this.lastLabelAcq - this.gracePeriod;
+        int labelAcq = labeledSoFar - this.lastInstancesLabeled;
+        this.lastInstancesLabeled = labeledSoFar;
+
+        return labelAcq;
     }
 
     @Override
