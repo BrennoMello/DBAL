@@ -29,7 +29,7 @@ public class Debug {
 
 		/*String driftStreamCLI = "ConceptDriftStream -s (moa.streams.generators.AgrawalGenerator -f 2) -d (moa" +
 			".streams" +
-				".generators.AgrawalGenerator -f 3) -p 30000 -w 1" ; */ // 2 drifts
+				".generators.AgrawalGenerator -f 3) -p 30000 -w 1" ;*/  // 2 drifts
 
 		//String driftStreamCLI = "moa.streams.generators.AgrawalGenerator -f 2 -b "; // 1 drift
 

@@ -29,7 +29,7 @@ public class Uncertainty {
         this.accuracyBaseLearner = 0.0D;
         this.lastLabelAcq = 0;
         this.fixedThreshold = 0.9D;
-        this.stepOption = 0.01D;
+        this.stepOption = 0.05D;
         this.classifierRandom = new Random(42);
         this.activeLearningChoiche = activeLearningOption;
         this.budget = 0.05;
@@ -80,6 +80,16 @@ public class Uncertainty {
 
     }
 
+    private boolean labelVar(double incomingPosterior, double threshold) {
+        if (incomingPosterior < threshold) {
+            return true;
+        } else {
+            return false;
+
+        }
+
+    }
+
     private boolean labelSelSampling(double incomingPosterior, int numberOfClasses) {
         double p = Math.abs(incomingPosterior - 1.0D / (double) numberOfClasses);
         double budget = this.budget / (this.budget + p);
@@ -94,7 +104,7 @@ public class Uncertainty {
 
     }
 
-    public boolean toLearn(double [] votes){
+    public boolean toLearn(double [] votes, double threshold){
         ++this.iterationControl;
         double costNow;
         if ((double)this.iterationControl <= this.numInstancesInitOption) {
@@ -111,7 +121,11 @@ public class Uncertainty {
 
                     case 1:
                         this.maxPosterior = this.getMaxPosterior(votes);
-                        return this.labelVar(this.maxPosterior);
+                        if (threshold < 0) {
+                            return this.labelVar(this.maxPosterior);
+                        }else{
+                            return this.labelVar(this.maxPosterior, threshold);
+                        }
 
                     case 2:
                         this.maxPosterior = this.getMaxPosterior(votes);

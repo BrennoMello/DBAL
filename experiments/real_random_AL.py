@@ -4,7 +4,7 @@ import time
 import datetime
 import os
 
-exp_names = [
+imb_names = [
     "adult",
     "amazon-employee",
     "amazon",
@@ -26,10 +26,55 @@ exp_names = [
     "WEATHER",
 ]
 
-generators = [
-    "ArffFileStream -f arff-datasets-binary/{}.arff)".format(dataset)
-    for dataset in exp_names
+
+standard_names = [
+    "adult",
+    "electricity",
+    "kddcup",
+    "powersupply",
+    "airlines",
+    "fars",
+    "kr-vs-k",
+    "shuttle",
+    "bridges",
+    "gas-sensor",
+    "letter",
+    "thyroid",
+    "census",
+    "GMSC",
+    "lymph",
+    "wine",
+    "coil2000",
+    "hepatitis",
+    "magic",
+    "zoo",
+    "connect-4",
+    "hypothyroid",
+    "nomao",
+    "covtype",
+    "IntelLabSensors",
+    "penbased",
+    "dj30",
+    "internet_ads",
+    "poker",
 ]
+
+
+imb_generators = [
+    "ArffFileStream -f datasets/datasets-imbalanced-binary/{}.arff)".format(dataset)
+    for dataset in imb_names
+]
+
+standard_generators = [
+    "ArffFileStream -f datasets/datasets-standard/{}.arff)".format(dataset)
+    for dataset in standard_names
+]
+
+
+generators = imb_generators + standard_generators
+
+exp_names = imb_names + standard_generators
+
 
 classifiers = [
     "moa.classifiers.trees.HoeffdingTree",
@@ -40,6 +85,9 @@ classifiers = [
 ]
 
 classifiers_name = ["HT", "ARF", "LB", "SRP", "NB"]
+
+
+evaluation_window = ["1", "500"]
 
 
 def cmdlineparse(args):
@@ -71,10 +119,11 @@ def train(args):
     # al_budget = ["0.5"]
 
     results = [
-        (generator, classifier, budget)
+        (generator, classifier, budget, evalWin)
         for generator in generators
         for classifier in classifiers
         for budget in al_budget
+        for evalWin in evaluation_window
     ]
 
     print(
@@ -84,7 +133,7 @@ def train(args):
     processes = list()
     success_count = 0
 
-    for (generator, classifier, budget) in results:
+    for (generator, classifier, budget, evalWin) in results:
         exp_name = exp_names[generators.index(generator)]
 
         cl_string = "moa.classifiers.active.ALRandom -l {} -b (moa.classifiers.active.budget.FixedBM -b {})".format(
@@ -92,28 +141,24 @@ def train(args):
         )
 
         cmd = (
-            "java "
-            + VMargs
-            + " -javaagent:sizeofag-1.0.4.jar -cp "
-            + jarFile
-            + " "
+            "java {}".format(VMargs)
+            + " -javaagent:sizeofag-1.0.4.jar -cp {} ".format(jarFile)
             + "moa.DoTask moa.tasks.meta.ALPrequentialEvaluationTask"
-            + ' -e "(ALMultiClassImbalancedPerformanceEvaluator -w 500)"'
-            + ' -s "('
-            + generator
-            + ')"'
-            + ' -l "('
-            + cl_string
-            + ')"'
-            + " -i 100000 -f 500"
-            + " -d "
-            + args.results_path
-            + classifiers_name[classifiers.index(classifier)]
-            + "-"
-            + budget
-            + "-"
-            + exp_name
-            + ".csv &"
+            + ' -e "(ALMultiClassImbalancedPerformanceEvaluator -w {})"'.format(evalWin)
+            + ' -s "({})"'.format(generator)
+            + ' -l "({})"'.format(cl_string)
+            + " -i 100000 -f {}".format(evalWin)
+            + " -d {} &".format(
+                args.results_path
+                + classifiers_name[classifiers.index(classifier)]
+                + "-"
+                + budget
+                + "-"
+                + exp_name
+                + "_eval"
+                + evalWin
+                + ".csv"
+            )
         )
 
         print(cmd)

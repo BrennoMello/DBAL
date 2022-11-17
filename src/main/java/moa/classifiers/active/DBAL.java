@@ -2,6 +2,7 @@ package moa.classifiers.active;
 
 import com.github.javacliparser.FloatOption;
 import com.github.javacliparser.IntOption;
+import com.github.javacliparser.MultiChoiceOption;
 import com.yahoo.labs.samoa.instances.Instance;
 import com.yahoo.labs.samoa.instances.InstancesHeader;
 
@@ -36,6 +37,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
     public FloatOption minBudgetOption = new FloatOption ("minBudget", 'm', "Minimum Budget used for supervised drift" +
             " drift detectors", 0.05, 0,1 );
+
     public IntOption gracePeriodOption = new IntOption ("gracePeriod", 'g', "Number of fully labeled instances" , 100
             , 0,
             Integer.MAX_VALUE );
@@ -57,6 +59,14 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     public ClassOption warningDetectorOption = new ClassOption("driftDetector", 'd', "Drift Detector for increasing " +
             "budget", AbstractChangeDetector.class, "moa.classifiers.core.driftdetection.ADWINChangeDetector " +
             "-a 0.001");
+
+
+    public FloatOption maxThresholdOption = new FloatOption("maxThreshold", 't', "Maximum Threshold that the " +
+            "uncertainty method will use", 0.8, 0, 1);
+
+    public MultiChoiceOption thresholdFunctionStrategyOption = new MultiChoiceOption("thresholdFunctionStrategy", 'f',
+            "Threshold function to use.", new String[]{"Default", "Parabola", "HalfParabola", "Linear"},
+            new String[]{"Fixed uncertainty strategy", "Uncertainty strategy with variable threshold", "Uncertainty strategy with randomized variable threshold", "Selective Sampling"}, 0);
 
 
     public Classifier classifier;
@@ -81,15 +91,35 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
     public MultiClassImbalancedPerformanceEvaluator evaluator;
 
-    public double [][] probability_correct;
-    public double [][] probability_incorrect;
 
-    public int [] correct_classified_counter;
-    public int [] incorrect_classified_counter;
-
-    public int [] beforeDrift = new int[2];
 
     public int lastInstancesLabeled = 0;
+    public double maxThreshold;
+    public double actualThreshold = -1;
+    public double lastThreshold = -1;
+
+    public double linearThreshold(int index){
+        double slope = (this.lastThreshold - this.maxThreshold)/this.driftWindow;
+        return slope*index + this.maxThreshold;
+    }
+
+    public double parabolaThreshold(int index){
+        double diff = (this.lastThreshold - this.maxThreshold);
+        double half = this.driftWindow/2;
+        double y = (diff/(half*half))*(index*index) - 2 * (diff/half) * index + this.lastThreshold;
+        return y;
+    }
+
+    public double halfParabolaThreshold(int index){
+
+        double diff = (this.maxThreshold - this.lastThreshold);
+        double driftSquared = this.driftWindow*this.driftWindow;
+        double y = (diff/driftSquared)*index*index - 2*(diff/this.driftWindow)*index + this.maxThreshold;
+        return y;
+
+    }
+
+
 
 
 
@@ -114,24 +144,15 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         this.instIndex = 0;
         this.correctInstances = 0;
         this.spendedBudget = 0;
-        this.evaluator = new MultiClassImbalancedPerformanceEvaluator();
-        evaluator.widthOption.setValue(300);
-        this.al_decider = new Uncertainty(1);
 
         this.warningWindow = this.warningWindowOption.getValue();
         this.driftWindow = this.driftWindowOption.getValue();
 
-        this.probability_correct = new double[2][2];
-        for (double[] row: probability_correct)
-            Arrays.fill(row, 0.0);
-        this.probability_incorrect = new double[2][2];
-        for (double[] row: probability_incorrect)
-            Arrays.fill(row, 0.0);
+        this.al_decider = new Uncertainty(1);
 
-        this.correct_classified_counter = new int[2];
-        Arrays.fill(this.correct_classified_counter, 0);
-        this.incorrect_classified_counter = new int[2];
-        Arrays.fill(this.incorrect_classified_counter, 0);
+        this.maxThreshold = this.maxThresholdOption.getValue();
+
+
 
 
     }
@@ -158,7 +179,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         if (this.lastLabelAcq < this.gracePeriod){
             this.classifier.trainOnInstance(instance);
             this.lastLabelAcq++;
-        } else if (al_decider.toLearn(this.classifier.getVotesForInstance(instance))) {
+        } else if (al_decider.toLearn(this.classifier.getVotesForInstance(instance), this.actualThreshold)) {
             this.driftDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
             this.warningDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
             this.classifier.trainOnInstance(instance);
@@ -175,7 +196,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
                     this.budget = this.minBudgetOption.getValue();
                     this.warningHappening = false;
 
-                    double [][] proportional =  this.getProportionsCorrect();
+
 
                 }
 
@@ -189,13 +210,33 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
                 }
                 if (this.driftInstances < this.driftWindow) {
                     //System.out.println("Budget under drift "+ this.budget);
-                    this.budget = Math.min(this.budget * 1.3, 0.1);
+                    //"Default", "Parabola", "HalfParabola", "Linear"
+                    switch(this.thresholdFunctionStrategyOption.getChosenIndex()) {
+                        case 0:
+                            this.actualThreshold = -1;
+                            break;
+                        case 1:
+                            this.actualThreshold = this.parabolaThreshold(this.driftInstances);
+                            break;
+                        case 2:
+                            this.actualThreshold = this.halfParabolaThreshold(this.driftInstances);
+                            break;
+                        case 3:
+                            this.actualThreshold = this.linearThreshold(this.driftInstances);
+                            break;
+
+                    }
+
+
+                    //this.actualThreshold = -1;
                     this.driftInstances++;
+
                 }else{
                     this.driftInstances = 0;
                     this.driftHappening = false;
                     this.budget = this.minBudgetOption.getValue();
-                    double [][] proportional =  this.getProportionsIncorrect();
+                    this.actualThreshold = -1;
+
 
 
 
@@ -209,12 +250,11 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
 
         if (this.warningDetector.getChange()){
-            //System.out.println("Drift Warning Detected in position " + this.instIndex); //Here we have to adjust
             this.warningDetector = ((ChangeDetector) this.getPreparedClassOption(this.warningDetectorOption)).copy();
             this.backgroundClassifier = ((Classifier) this.getPreparedClassOption(this.baseLearnerOption)).copy();
             this.warningHappening = true;
             this.warningInstances = 0;
-
+            this.budget = this.budget * 1.3;
         }
 
 
@@ -222,48 +262,20 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
         if (this.driftDetector.getChange()){
 
-            //System.out.println("reset classifiers");
             this.driftDetector = ((ChangeDetector) this.getPreparedClassOption(this.driftDetectorOption)).copy();
-            //this.classifier = this.backgroundClassifier.copy();
-            //System.out.println("Drift Detected in position " + this.instIndex); //Here we have to adjust
 
-            //this.beforeDrift[0] = this.al_decider.lastLabelAcq;
-            //this.beforeDrift[1] = this.al_decider.costLabeling;
+            //System.out.println("Before" + this.al_decider.newThreshold);
+
+            this.lastThreshold = this.al_decider.newThreshold;
+
             this.al_decider.lastLabelAcq = 0;
             this.al_decider.costLabeling = 0;
+            this.budget = this.budget * 1.5;
 
             this.driftHappening = true;
             this.driftInstances = 0;
         }
 
-        if (warningHappening){
-            if ((int) instance.classValue() == Utils.maxIndex(this.classifier.getVotesForInstance(instance))){
-                //System.out.println(Arrays.toString(this.probability_correct[0]));
-                //System.out.println(Arrays.toString(this.probability_correct[1]));
-                this.probability_correct[(int) instance.classValue()][0] +=
-                        this.classifier.getVotesForInstance(instance)[0] / Arrays.stream(this.classifier.getVotesForInstance(instance)).sum();
-                this.probability_correct[(int) instance.classValue()][1] +=
-                        this.classifier.getVotesForInstance(instance)[1] / Arrays.stream(this.classifier.getVotesForInstance(instance)).sum();
-
-                this.correct_classified_counter[(int) instance.classValue()] +=1;
-
-
-                //System.out.println("Instance after warning " + this.warningInstances);
-                //this.printVotes(instance, this.classifier.getVotesForInstance(instance));
-            }
-
-            if ((int) instance.classValue() != Utils.maxIndex(this.classifier.getVotesForInstance(instance))){
-                this.probability_incorrect[(int) instance.classValue()][0] +=
-                        this.classifier.getVotesForInstance(instance)[0] / Arrays.stream(this.classifier.getVotesForInstance(instance)).sum();;
-                this.probability_incorrect[(int) instance.classValue()][1] +=
-                        this.classifier.getVotesForInstance(instance)[1] / Arrays.stream(this.classifier.getVotesForInstance(instance)).sum();;
-
-                this.incorrect_classified_counter[(int) instance.classValue()] +=1;
-                //System.out.println("Instance after warning " + this.warningInstances);
-                //this.printVotes(instance, this.classifier.getVotesForInstance(instance));
-            }
-
-        }
 
 
 
@@ -308,23 +320,5 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         return false;
     }
 
-    public double [][] getProportionsCorrect(){
-        double [][] proportions = new double[2][2];
-        proportions[0][0] = this.probability_correct[0][0] / this.correct_classified_counter[0];
-        proportions[0][1] = this.probability_correct[0][1] / this.correct_classified_counter[0];
-        proportions[1][0] = this.probability_correct[1][0] / this.correct_classified_counter[1];
-        proportions[1][1] = this.probability_correct[1][1] / this.correct_classified_counter[1];
 
-        return proportions;
-    }
-
-    public double [][] getProportionsIncorrect(){
-        double [][] proportions = new double[2][2];
-        proportions[0][0] = this.probability_incorrect[0][0] / this.incorrect_classified_counter[0];
-        proportions[0][1] = this.probability_incorrect[0][1] / this.incorrect_classified_counter[0];
-        proportions[1][0] = this.probability_incorrect[1][0] / this.incorrect_classified_counter[1];
-        proportions[1][1] = this.probability_incorrect[1][1] / this.incorrect_classified_counter[1];
-
-        return proportions;
-    }
 }

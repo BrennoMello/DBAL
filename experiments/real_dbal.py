@@ -5,7 +5,7 @@ import datetime
 import os
 
 
-exp_names = [
+imb_names = [
     "adult",
     "amazon-employee",
     "amazon",
@@ -27,10 +27,55 @@ exp_names = [
     "WEATHER",
 ]
 
-generators = [
-    "ArffFileStream -f arff-datasets-binary/{}.arff)".format(dataset)
-    for dataset in exp_names
+
+standard_names = [
+    "adult",
+    "electricity",
+    "kddcup",
+    "powersupply",
+    "airlines",
+    "fars",
+    "kr-vs-k",
+    "shuttle",
+    "bridges",
+    "gas-sensor",
+    "letter",
+    "thyroid",
+    "census",
+    "GMSC",
+    "lymph",
+    "wine",
+    "coil2000",
+    "hepatitis",
+    "magic",
+    "zoo",
+    "connect-4",
+    "hypothyroid",
+    "nomao",
+    "covtype",
+    "IntelLabSensors",
+    "penbased",
+    "dj30",
+    "internet_ads",
+    "poker",
 ]
+
+
+imb_generators = [
+    "ArffFileStream -f datasets/datasets-imbalanced-binary/{}.arff)".format(dataset)
+    for dataset in imb_names
+]
+
+standard_generators = [
+    "ArffFileStream -f datasets/datasets-standard/{}.arff)".format(dataset)
+    for dataset in standard_names
+]
+
+
+generators = imb_generators + standard_generators
+
+exp_names = imb_names + standard_generators
+
 
 classifiers = [
     "moa.classifiers.trees.HoeffdingTree",
