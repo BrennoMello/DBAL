@@ -62,12 +62,12 @@ standard_names = [
 
 
 imb_generators = [
-    "ArffFileStream -f datasets/datasets-imbalanced-binary/{}.arff)".format(dataset)
+    "ArffFileStream -f datasets/datasets-imbalanced-binary/{}.arff".format(dataset)
     for dataset in imb_names
 ]
 
 standard_generators = [
-    "ArffFileStream -f datasets/datasets-standard/{}.arff)".format(dataset)
+    "ArffFileStream -f datasets/datasets-standard/{}.arff".format(dataset)
     for dataset in standard_names
 ]
 
@@ -87,6 +87,9 @@ classifiers = [
 
 classifiers_name = ["HT", "ARF", "LB", "SRP", "NB"]
 
+threshold_management = ["Default", "Parabola", "HalfParabola", "Linear"]
+
+max_threshold = ["0.7", "0.8", "0.9"]
 
 minimum_budget = ["0.01", "0.05", "0.1"]
 
@@ -94,6 +97,9 @@ minimum_budget = ["0.01", "0.05", "0.1"]
 driftWindowOptions = ["100"]
 
 warningWindowOptions = ["50"]
+
+
+evaluation_window = ["1", "500"]
 
 
 def cmdlineparse(args):
@@ -125,12 +131,14 @@ def train(args):
     # al_budget = ["0.5"]
 
     results = [
-        (generator, classifier, driftWindow, budget)
+        (generator, classifier, driftWindow, budget, threshold, max_t, evalWin)
         for generator in generators
         for classifier in classifiers
         for driftWindow in driftWindowOptions
         for budget in minimum_budget
-        # for budget in al_budget
+        for threshold in threshold_management
+        for max_t in max_threshold
+        for evalWin in evaluation_window
     ]
 
     print(
@@ -140,41 +148,49 @@ def train(args):
     processes = list()
     success_count = 0
 
-    for (generator, classifier, driftWindow, budget) in results:
+    for (
+        generator,
+        classifier,
+        driftWindow,
+        budget,
+        threshold,
+        max_t,
+        evalWin,
+    ) in results:
         exp_name = exp_names[generators.index(generator)]
         warningWindow = warningWindowOptions[driftWindowOptions.index(driftWindow)]
 
-        cl_string = "moa.classifiers.active.DBAL -l {} -q {} -r {} -m {}".format(
-            classifier, driftWindow, warningWindow, budget
+        cl_string = (
+            "moa.classifiers.active.DBAL -l {} -q {} -r {} -m {} -t {} -f {}".format(
+                classifier, driftWindow, warningWindow, budget, max_t, threshold
+            )
         )
 
         cmd = (
-            "java "
-            + VMargs
-            + " -javaagent:sizeofag-1.0.4.jar -cp "
-            + jarFile
-            + " "
+            "java {}".format(VMargs)
+            + " -javaagent:sizeofag-1.0.4.jar -cp {} ".format(jarFile)
             + "moa.DoTask moa.tasks.meta.ALPrequentialEvaluationTask"
-            + ' -e "(ALMultiClassImbalancedPerformanceEvaluator -w 500)"'
-            + ' -s "('
-            + generator
-            + ')"'
-            + ' -l "('
-            + cl_string
-            + ')"'
-            + " -i 100000 -f 500"
-            + " -d "
-            + args.results_path
-            + classifiers_name[classifiers.index(classifier)]
-            + "-"
-            + driftWindow
-            + "-"
-            + warningWindow
-            + "-"
-            + budget
-            + "-"
-            + exp_name
-            + ".csv &"
+            + ' -e "(ALMultiClassImbalancedPerformanceEvaluator -w {})"'.format(evalWin)
+            + ' -s "({})"'.format(generator)
+            + ' -l "({})"'.format(cl_string)
+            + " -i 100000 -f {}".format(evalWin)
+            + " -d {} &".format(
+                args.results_path
+                + classifiers_name[classifiers.index(classifier)]
+                + "-"
+                + driftWindow
+                + "-"
+                + warningWindow
+                + "-"
+                + budget
+                + "-"
+                + threshold
+                + "-"
+                + exp_name
+                + "_eval"
+                + evalWin
+                + ".csv"
+            )
         )
 
         print(cmd)

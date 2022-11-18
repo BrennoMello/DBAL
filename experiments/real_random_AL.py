@@ -61,12 +61,12 @@ standard_names = [
 
 
 imb_generators = [
-    "ArffFileStream -f datasets/datasets-imbalanced-binary/{}.arff)".format(dataset)
+    "ArffFileStream -f datasets/datasets-imbalanced-binary/{}.arff".format(dataset)
     for dataset in imb_names
 ]
 
 standard_generators = [
-    "ArffFileStream -f datasets/datasets-standard/{}.arff)".format(dataset)
+    "ArffFileStream -f datasets/datasets-standard/{}.arff".format(dataset)
     for dataset in standard_names
 ]
 
