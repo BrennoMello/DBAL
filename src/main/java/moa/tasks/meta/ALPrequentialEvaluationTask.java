@@ -190,6 +190,7 @@ public class ALPrequentialEvaluationTask extends ALMainTask {
         	// check if label was acquired
         	int labelAcquired = learner.getLastLabelAcqReport();
         	evaluator.doLabelAcqReport(trainInst, labelAcquired);
+
         	
         	instancesProcessed++;
         	

@@ -154,6 +154,10 @@ al_uncertainty_methods = [
 
 evaluation_window = ["1", "500"]
 
+tasks  = ["ALSinglePrequentialEvaluationTask", "ALPrequentialEvaluationTask"]
+
+evaluators = ["ALSingleMultiClassImbalancedPerformanceEvaluator", "ALMultiClassImbalancedPerformanceEvaluator"]
+
 
 def cmdlineparse(args):
     parser = argparse.ArgumentParser(description="Run MOA scripts")
@@ -200,7 +204,11 @@ def train(args):
     success_count = 0
 
     for (generator, classifier, budget, al_strategy, evalWin) in results:
+        if budget == "1.0" and evalWin == "1":
+            continue
         exp_name = exp_names[generators.index(generator)]
+        task = tasks[evaluation_window.index(evalWin)]
+        evaluator = evaluators[evaluation_window.index(evalWin)]
 
         cl_string = "moa.classifiers.active.ALUncertainty -l {} -b {} -d {}".format(
             classifier, budget, al_strategy
@@ -209,13 +217,14 @@ def train(args):
         cmd = (
             "java {}".format(VMargs)
             + " -javaagent:sizeofag-1.0.4.jar -cp {} ".format(jarFile)
-            + "moa.DoTask moa.tasks.meta.ALPrequentialEvaluationTask"
-            + ' -e "(ALMultiClassImbalancedPerformanceEvaluator -w {})"'.format(evalWin)
+            + "moa.DoTask {}".format(task)
+            + ' -e "({} -w {})"'.format(evaluator, 500)
             + ' -s "({})"'.format(generator)
             + ' -l "({})"'.format(cl_string)
-            + " -i 100000 -f {}".format(evalWin)
+            + " -i 100000 -f {}".format(500)
             + " -d {} &".format(
                 args.results_path
+                + "/{}/".format(al_strategy)
                 + classifiers_name[classifiers.index(classifier)]
                 + "-"
                 + budget

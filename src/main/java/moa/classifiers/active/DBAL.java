@@ -4,29 +4,18 @@ import com.github.javacliparser.FloatOption;
 import com.github.javacliparser.IntOption;
 import com.github.javacliparser.MultiChoiceOption;
 import com.yahoo.labs.samoa.instances.Instance;
-import com.yahoo.labs.samoa.instances.InstancesHeader;
 
 import java.util.*;
 
 import moa.classifiers.AbstractClassifier;
 import moa.classifiers.Classifier;
-import moa.classifiers.active.budget.BudgetManager;
 import moa.classifiers.core.driftdetection.ChangeDetector;
-import moa.core.Example;
-import moa.core.InstanceExample;
 import moa.core.Measurement;
-import moa.evaluation.ALMultiClassImbalancedPerformanceEvaluator;
-import moa.evaluation.ImbalancedPerformanceEvaluator;
 import moa.evaluation.MultiClassImbalancedPerformanceEvaluator;
 import moa.options.ClassOption;
-import moa.classifiers.active.ALClassifier;
 import moa.classifiers.core.driftdetection.AbstractChangeDetector;
-import moa.classifiers.core.driftdetection.DDM;
-import moa.classifiers.core.driftdetection.ADWIN;
-import weka.core.Utils;
 //import moa.classifiers.trees.HoeffdingTree
 import utils.Uncertainty;
-import moa.classifiers.active.ALUncertainty;
 
 public class DBAL extends AbstractClassifier implements ALClassifier{
 

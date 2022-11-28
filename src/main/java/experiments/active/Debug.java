@@ -1,13 +1,9 @@
 package experiments.active;
 
-import moa.classifiers.active.ALRandom;
-import moa.classifiers.active.ALUncertainty;
 import moa.classifiers.active.DBAL;
 import moa.core.InstanceExample;
 import moa.core.TimingUtils;
-import moa.evaluation.ALMultiClassImbalancedPerformanceEvaluator;
-import moa.streams.generators.AgrawalGenerator;
-import moa.streams.generators.RandomRBFGenerator;
+import moa.evaluation.ALSingleMultiClassImbalancedPerformanceEvaluator;
 import moa.streams.ConceptDriftStream;
 //import moa.classifiers.meta.AdaptiveRandomForest
 public class Debug {
@@ -93,7 +89,7 @@ public class Debug {
 
 		int numberInstances = 0;
 		
-		ALMultiClassImbalancedPerformanceEvaluator evaluator = new ALMultiClassImbalancedPerformanceEvaluator();
+		ALSingleMultiClassImbalancedPerformanceEvaluator evaluator = new ALSingleMultiClassImbalancedPerformanceEvaluator();
 		int eval_size = evaluator.widthOption.getValue();
 
 		long evaluateStartTime = TimingUtils.getNanoCPUTimeOfCurrentThread();
