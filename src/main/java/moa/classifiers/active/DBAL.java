@@ -17,6 +17,7 @@ import moa.classifiers.core.driftdetection.AbstractChangeDetector;
 //import moa.classifiers.trees.HoeffdingTree
 import utils.Uncertainty;
 
+
 public class DBAL extends AbstractClassifier implements ALClassifier{
 
     private static final long serialVersionUID = 1L;
@@ -57,6 +58,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             "Threshold function to use.", new String[]{"Default", "Parabola", "HalfParabola", "Linear"},
             new String[]{"Fixed uncertainty strategy", "Uncertainty strategy with variable threshold", "Uncertainty strategy with randomized variable threshold", "Selective Sampling"}, 0);
 
+    public FloatOption maxBudgetOption = new FloatOption("maxBudget", 'z', "Maximum Budget", 0.2, 0, 1);
 
     public Classifier classifier;
     public Classifier backgroundClassifier;
@@ -78,6 +80,8 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     public int driftInstances;
     public int driftWindow;
 
+    public double maxBudget;
+
     public MultiClassImbalancedPerformanceEvaluator evaluator;
 
 
@@ -86,6 +90,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     public double maxThreshold;
     public double actualThreshold = -1;
     public double lastThreshold = -1;
+    private int lastCostOfLabeling;
 
     public double linearThreshold(int index){
         double slope = (this.lastThreshold - this.maxThreshold)/this.driftWindow;
@@ -138,8 +143,11 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         this.driftWindow = this.driftWindowOption.getValue();
 
         this.al_decider = new Uncertainty(1);
+        this.al_decider.setNewBudget(this.budget);
 
         this.maxThreshold = this.maxThresholdOption.getValue();
+
+        this.maxBudget = this.maxBudgetOption.getValue();
 
 
 
@@ -177,16 +185,11 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
             if (this.warningHappening){
                 if (this.warningInstances < this.warningWindow) {
-                    this.budget = Math.min(this.budget * 1.2, 0.1);
-                    //System.out.println("Budget under drift warning "+ this.budget);
                     this.warningInstances++;
                 }else{
                     this.warningInstances = 0;
                     this.budget = this.minBudgetOption.getValue();
                     this.warningHappening = false;
-
-
-
                 }
 
                 this.al_decider.setNewBudget(this.budget);
@@ -198,8 +201,6 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
                     this.warningInstances = 0;
                 }
                 if (this.driftInstances < this.driftWindow) {
-                    //System.out.println("Budget under drift "+ this.budget);
-                    //"Default", "Parabola", "HalfParabola", "Linear"
                     switch(this.thresholdFunctionStrategyOption.getChosenIndex()) {
                         case 0:
                             this.actualThreshold = -1;
@@ -224,10 +225,8 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
                     this.driftInstances = 0;
                     this.driftHappening = false;
                     this.budget = this.minBudgetOption.getValue();
+                    this.al_decider.costLabeling = this.lastCostOfLabeling;
                     this.actualThreshold = -1;
-
-
-
 
                 }
                 this.al_decider.setNewBudget(this.budget);
@@ -243,7 +242,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             this.backgroundClassifier = ((Classifier) this.getPreparedClassOption(this.baseLearnerOption)).copy();
             this.warningHappening = true;
             this.warningInstances = 0;
-            this.budget = this.budget * 1.3;
+            this.budget = this.maxBudget/2.0;
         }
 
 
@@ -253,13 +252,13 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
             this.driftDetector = ((ChangeDetector) this.getPreparedClassOption(this.driftDetectorOption)).copy();
 
-            //System.out.println("Before" + this.al_decider.newThreshold);
-
             this.lastThreshold = this.al_decider.newThreshold;
+
+            this.lastCostOfLabeling = this.al_decider.costLabeling;
 
             this.al_decider.lastLabelAcq = 0;
             this.al_decider.costLabeling = 0;
-            this.budget = this.budget * 1.5;
+            this.budget = this.maxBudget;
 
             this.driftHappening = true;
             this.driftInstances = 0;
@@ -284,10 +283,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
         return this.classifier.getVotesForInstance(instance);
     }
 
-    //@Override
-    /*protected Measurement[] getModelMeasurementsImpl() {
-        return new Measurement[0];
-    }*/
+
 
     @Override
     public void getModelDescription(java.lang.StringBuilder stringBuilder, int i) {
