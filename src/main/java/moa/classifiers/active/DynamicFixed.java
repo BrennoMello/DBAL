@@ -1,6 +1,7 @@
 package moa.classifiers.active;
 
 import com.github.javacliparser.FloatOption;
+import com.github.javacliparser.IntOption;
 import com.yahoo.labs.samoa.instances.Instance;
 import moa.classifiers.AbstractClassifier;
 import moa.classifiers.Classifier;
@@ -12,7 +13,7 @@ import utils.Uncertainty;
 public class DynamicFixed  extends AbstractClassifier implements ALClassifier{
 
     public FloatOption budgetOption = new FloatOption ("Budget", 'b', "budget", 0.05, 0,1 );
-    public FloatOption deltaTimeOption = new FloatOption ("Delta Time", 'd', "budget", 0.05, 0,1 );
+    public IntOption deltaTimeOption = new IntOption ("Delta Time", 'd', "budget", 1000, 0,Integer.MAX_VALUE );
     public ClassOption baseLearnerOption = new ClassOption("baseLearner", 'l', "Classifier to train.",
             Classifier.class, "moa.classifiers.trees.HoeffdingTree");
 
