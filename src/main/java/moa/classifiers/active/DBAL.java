@@ -61,7 +61,6 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     public FloatOption maxBudgetOption = new FloatOption("maxBudget", 'z', "Maximum Budget", 0.2, 0, 1);
 
     public Classifier classifier;
-    public Classifier backgroundClassifier;
     public ChangeDetector driftDetector;
     public ChangeDetector warningDetector;
     public Uncertainty al_decider;
@@ -123,8 +122,7 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     public void resetLearningImpl() {
         this.classifier = ((Classifier) this.getPreparedClassOption(this.baseLearnerOption)).copy();
         this.classifier.resetLearning();
-        this.backgroundClassifier = ((Classifier) this.getPreparedClassOption(this.baseLearnerOption)).copy();
-        this.backgroundClassifier.resetLearning();
+
         this.driftDetector = ((ChangeDetector) this.getPreparedClassOption(this.driftDetectorOption)).copy();
         this.driftDetector.resetLearning();
         this.warningDetector = ((ChangeDetector) this.getPreparedClassOption(this.warningDetectorOption)).copy();
@@ -180,7 +178,6 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             this.driftDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
             this.warningDetector.input(this.classifier.correctlyClassifies(instance) ? 0.0D : 1.0D);
             this.classifier.trainOnInstance(instance);
-            this.backgroundClassifier.trainOnInstance(instance);
             this.lastLabelAcq++;
 
             if (this.warningHappening){
@@ -239,7 +236,6 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
 
         if (this.warningDetector.getChange()){
             this.warningDetector = ((ChangeDetector) this.getPreparedClassOption(this.warningDetectorOption)).copy();
-            this.backgroundClassifier = ((Classifier) this.getPreparedClassOption(this.baseLearnerOption)).copy();
             this.warningHappening = true;
             this.warningInstances = 0;
             this.budget = this.maxBudget/2.0;
