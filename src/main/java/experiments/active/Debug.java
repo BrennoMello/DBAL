@@ -1,6 +1,7 @@
 package experiments.active;
 
 import moa.classifiers.active.DBAL;
+import moa.classifiers.active.DynamicFixed;
 import moa.core.InstanceExample;
 import moa.core.TimingUtils;
 import moa.evaluation.ALSingleMultiClassImbalancedPerformanceEvaluator;
@@ -71,15 +72,13 @@ public class Debug {
 		classifier.prepareForUse();*/
 
 
-
-
 		DBAL classifier = new DBAL();
 		//import moa.classifiers.core.driftdetection.STEPD
 		//import moa.classifiers.core.driftdetection.ADWINChangeDetector
-		classifier.warningDetectorOption.setValueViaCLIString("moa.classifiers.core.driftdetection.ADWINChangeDetector " +
+		/*classifier.warningDetectorOption.setValueViaCLIString("moa.classifiers.core.driftdetection.ADWINChangeDetector " +
 				"-a 0.001");
 		classifier.driftDetectorOption.setValueViaCLIString("moa.classifiers.core.driftdetection.ADWINChangeDetector " +
-				"-a 0.0001");
+				"-a 0.0001");*/
 
 		classifier.prepareForUse();
 
@@ -115,7 +114,7 @@ public class Debug {
         	evaluator.doLabelAcqReport(instance, classifier.getLastLabelAcqReport());
 
 
-			if (numberInstances%eval_size == 0){
+			/*if (numberInstances%eval_size == 0){
 				//System.out.println(evaluator.getPerformanceMeasurements()[1].getName() + "\t" + evaluator
 				// .getPerformanceMeasurements()[1].getValue());
 
@@ -127,7 +126,7 @@ public class Debug {
 				}
 
 				n_windows++;
-			}
+			}*/
 
 			numberInstances++;
 		}

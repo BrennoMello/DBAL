@@ -41,12 +41,12 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
             , 0,
             Integer.MAX_VALUE );
 
-    public ClassOption driftDetectorOption = new ClassOption("warningDetector", 'w', "Warning Detector for increasing" +
+    public ClassOption driftDetectorOption = new ClassOption("warningDetector", 'd', "Warning Detector for increasing" +
             " " +
             "budget", AbstractChangeDetector.class, "moa.classifiers.core.driftdetection.ADWINChangeDetector " +
             "-a 0.0001");
 
-    public ClassOption warningDetectorOption = new ClassOption("driftDetector", 'd', "Drift Detector for increasing " +
+    public ClassOption warningDetectorOption = new ClassOption("driftDetector", 'w', "Drift Detector for increasing " +
             "budget", AbstractChangeDetector.class, "moa.classifiers.core.driftdetection.ADWINChangeDetector " +
             "-a 0.001");
 
@@ -166,8 +166,6 @@ public class DBAL extends AbstractClassifier implements ALClassifier{
     public void trainOnInstanceImpl(Instance instance) {
         double value = this.classifierRandom.nextDouble();
         this.instIndex ++;
-
-
 
 
 
