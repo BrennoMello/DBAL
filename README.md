@@ -9,6 +9,8 @@ Learning classification models from non-stationary data streams presents challen
 
 DBAL was implemented using MOA (https://github.com/Waikato/moa) and **Java OpenJDK 18**, and the running scripts were implemented in **Python 3.7**. 
 
+DBAL Java class implementation is `moa.classifiers.active.DBAL`
+
 The running bash scripts are in the `/experiments` folder. 
 
 `run_generators_gradual.sh` :  Run experiments for all active learning strategies in the presence of gradual concept drift
