@@ -7,8 +7,18 @@ Learning classification models from non-stationary data streams presents challen
 
 ## Implementation details
 
-DBAL was implemented using MOA (https://github.com/Waikato/moa) and Java OpenJDK 18. 
+DBAL was implemented using MOA (https://github.com/Waikato/moa) and **Java OpenJDK 18**, and the running scripts were implemented in **Python 3.7**. 
 
+The running bash scripts are in the `/experiments` folder. 
+
+`run_generators_gradual.sh` :  Run experiments for all active learning strategies in the presence of gradual concept drift
+
+`run_generators_sudden.sh` :  Run experiments for all active learning strategies in the presence of sudden concept drift
+
+`run_real.sh` :  Run experiments for all active learning strategies in the real-world data streams
+
+
+Number of parallel processes can be edited in the `.sh` files. Results folder can also be edited and should be created **before** running the script.
 
 ## Data
 

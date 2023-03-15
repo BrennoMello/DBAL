@@ -73,7 +73,7 @@ standard_generators = [
 
 generators = imb_generators + standard_generators
 
-exp_names = imb_names + standard_generators
+exp_names = imb_names + standard_names
 
 
 classifiers = [
@@ -95,7 +95,7 @@ al_uncertainty_methods = [
 ]
 
 
-evaluation_window = ["1", "500"]
+evaluation_window = ["500"]
 
 
 def cmdlineparse(args):
@@ -159,6 +159,7 @@ def train(args):
             + " -i 100000 -f {}".format(evalWin)
             + " -d {} &".format(
                 args.results_path
+                + "/{}/".format(al_strategy)
                 + classifiers_name[classifiers.index(classifier)]
                 + "-"
                 + budget

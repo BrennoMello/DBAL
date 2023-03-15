@@ -73,7 +73,7 @@ standard_generators = [
 
 generators = imb_generators + standard_generators
 
-exp_names = imb_names + standard_generators
+exp_names = imb_names + standard_names
 
 
 classifiers = [
@@ -87,7 +87,7 @@ classifiers = [
 classifiers_name = ["HT", "ARF", "LB", "SRP", "NB"]
 
 
-evaluation_window = ["1", "500"]
+evaluation_window = ["500"]
 
 
 def cmdlineparse(args):
