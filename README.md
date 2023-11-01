@@ -4,7 +4,7 @@ Learning classification models from non-stationary data streams presents challen
 
 ![](theoric_example.png)
 
-*Manuscript submitted for publication at Information Sciences* (https://www.sciencedirect.com/journal/information-sciences)
+*Manuscript published at Information Sciences* ([https://www.sciencedirect.com/journal/information-sciences](https://www.sciencedirect.com/science/article/pii/S0020025523014068))
 
 ## Implementation details
 
@@ -26,3 +26,15 @@ Number of parallel processes can be edited in the `.sh` files. Results folder ca
 ## Data
 
 Real-world data streams are available in the [link](https://drive.google.com/drive/folders/1LBi37mzEl_HS3JixbH-PoLndCaTy5_WR?usp=sharing).
+
+## Citation
+
+```
+@article{aguiar2023dynamic,
+  title = {Dynamic budget allocation for sparsely labeled drifting data streams},
+  journal = {Information Sciences},
+  year = {2023},
+  issn = {0020-0255},
+  author = {Gabriel J. Aguiar and Alberto Cano}
+}
+```
