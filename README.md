@@ -30,11 +30,16 @@ Real-world data streams are available in the [link](https://drive.google.com/dri
 ## Citation
 
 ```
-@article{aguiar2023dynamic,
-  title = {Dynamic budget allocation for sparsely labeled drifting data streams},
-  journal = {Information Sciences},
-  year = {2023},
-  issn = {0020-0255},
-  author = {Gabriel J. Aguiar and Alberto Cano}
+@article{aguiar2024dynamic,
+title = {Dynamic budget allocation for sparsely labeled drifting data streams},
+journal = {Information Sciences},
+volume = {654},
+pages = {119821},
+year = {2024},
+issn = {0020-0255},
+doi = {https://doi.org/10.1016/j.ins.2023.119821},
+url = {https://www.sciencedirect.com/science/article/pii/S0020025523014068},
+author = {Gabriel J. Aguiar and Alberto Cano},
+keywords = {Data streams, Active learning, Machine learning},
 }
 ```
